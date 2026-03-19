@@ -18,7 +18,7 @@ return [
     
     // Chế độ debug: true = hiện lỗi chi tiết, false = ẩn lỗi (bảo mật)
     // Tự động bật khi env = development
-    'debug' => getenv('APP_DEBUG') === 'true' || getenv('APP_ENV') === 'development',
+    'debug' => true, // Bật tạm để debug
     
     // URL gốc của ứng dụng - dùng để tạo link đầy đủ
     'url' => getenv('APP_URL') ?: (getenv('RAILWAY_PUBLIC_DOMAIN') ? 'https://' . getenv('RAILWAY_PUBLIC_DOMAIN') : 'http://localhost:8000'),
