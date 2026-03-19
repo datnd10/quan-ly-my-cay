@@ -118,6 +118,90 @@
           }
         }
       }
+    },
+    "/migrate": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Run database migration",
+        "description": "Tạo tất cả bảng trong database tự động",
+        "responses": {
+          "200": {
+            "description": "Migration thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Database migration completed successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Migration thất bại",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/env-check": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Check environment variables",
+        "description": "Kiểm tra cấu hình môi trường (debug only)",
+        "responses": {
+          "200": {
+            "description": "Environment info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "environment": {
+                      "type": "string",
+                      "example": "production"
+                    },
+                    "debug": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "url": {
+                      "type": "string",
+                      "example": "https://your-app.up.railway.app"
+                    },
+                    "railway_detected": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "mysql_connected": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

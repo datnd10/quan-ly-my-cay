@@ -63,6 +63,21 @@ $router->get('migrate', function() {
     }
 });
 
+// Check environment (chỉ dùng để debug)
+$router->get('env-check', function() {
+    $config = require __DIR__ . '/../config/app.php';
+    
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
+        'environment' => $config['env'],
+        'debug' => $config['debug'],
+        'url' => $config['url'],
+        'railway_detected' => getenv('RAILWAY_ENVIRONMENT') ? true : false,
+        'mysql_connected' => getenv('MYSQLHOST') ? true : false
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+});
+
 // Swagger documentation
 $router->get('docs', function() {
     header('Content-Type: text/html; charset=utf-8', true);
@@ -71,8 +86,24 @@ $router->get('docs', function() {
 });
 
 $router->get('docs/openapi.json', function() {
+    // Đọc file openapi.json
+    $openapi = json_decode(file_get_contents(__DIR__ . '/../docs/openapi.json'), true);
+    
+    // Tự động detect server URL
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
+    $baseUrl = $protocol . '://' . $host . '/api';
+    
+    // Update servers
+    $openapi['servers'] = [
+        [
+            'url' => $baseUrl,
+            'description' => 'Current server'
+        ]
+    ];
+    
     header('Content-Type: application/json; charset=utf-8', true);
-    echo file_get_contents(__DIR__ . '/../docs/openapi.json');
+    echo json_encode($openapi, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit();
 });
 
