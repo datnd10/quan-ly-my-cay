@@ -1,0 +1,95 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Spicy Noodle Management API",
+    "description": "REST API cho hệ thống quản lý nhà hàng mỳ cay",
+    "version": "1.0.2",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints"
+    },
+    {
+      "name": "Products",
+      "description": "Product management"
+    },
+    {
+      "name": "Categories",
+      "description": "Category management"
+    },
+    {
+      "name": "Orders",
+      "description": "Order management"
+    },
+    {
+      "name": "Customers",
+      "description": "Customer management"
+    },
+    {
+      "name": "Tables",
+      "description": "Table management"
+    },
+    {
+      "name": "Branches",
+      "description": "Branch management"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Kiểm tra trạng thái API",
+        "responses": {
+          "200": {
+            "description": "API đang hoạt động"
+          }
+        }
+      }
+    },
+    "/test-db": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Test database connection",
+        "description": "Kiểm tra kết nối database",
+        "responses": {
+          "200": {
+            "description": "Kết nối database thành công"
+          }
+        }
+      }
+    },
+    "/migrate": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Run database migration",
+        "description": "Tạo tất cả bảng trong database tự động",
+        "responses": {
+          "200": {
+            "description": "Migration thành công"
+          }
+        }
+      }
+    },
+    "/env-check": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Check environment variables",
+        "description": "Kiểm tra cấu hình môi trường",
+        "responses": {
+          "200": {
+            "description": "Environment info"
+          }
+        }
+      }
+    }
+  }
+}

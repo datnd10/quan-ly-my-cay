@@ -86,8 +86,8 @@ $router->get('docs', function() {
 });
 
 $router->get('docs/openapi.json', function() {
-    // Đọc file openapi.json
-    $openapi = json_decode(file_get_contents(__DIR__ . '/../docs/openapi.json'), true);
+    // Đọc file template
+    $openapi = json_decode(file_get_contents(__DIR__ . '/../docs/openapi-template.json'), true);
     
     // Force Railway domain
     $openapi['servers'] = [
