@@ -90,7 +90,9 @@ $router->get('docs/openapi.json', function() {
     $openapi = json_decode(file_get_contents(__DIR__ . '/../docs/openapi.json'), true);
     
     // Tự động detect server URL
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
+                (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') 
+                ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
     $baseUrl = $protocol . '://' . $host . '/api';
     
@@ -99,6 +101,10 @@ $router->get('docs/openapi.json', function() {
         [
             'url' => $baseUrl,
             'description' => 'Current server'
+        ],
+        [
+            'url' => 'https://seoul-spicy-production.up.railway.app/api',
+            'description' => 'Production server'
         ]
     ];
     
