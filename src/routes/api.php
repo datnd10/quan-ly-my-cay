@@ -89,26 +89,18 @@ $router->get('docs/openapi.json', function() {
     // Đọc file openapi.json
     $openapi = json_decode(file_get_contents(__DIR__ . '/../docs/openapi.json'), true);
     
-    // Tự động detect server URL
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
-                (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') 
-                ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
-    $baseUrl = $protocol . '://' . $host . '/api';
-    
-    // Update servers
+    // Force Railway domain
     $openapi['servers'] = [
         [
-            'url' => $baseUrl,
-            'description' => 'Current server'
-        ],
-        [
             'url' => 'https://seoul-spicy-production.up.railway.app/api',
-            'description' => 'Production server'
+            'description' => 'Production server (Railway)'
         ]
     ];
     
     header('Content-Type: application/json; charset=utf-8', true);
+    header('Cache-Control: no-cache, no-store, must-revalidate', true);
+    header('Pragma: no-cache', true);
+    header('Expires: 0', true);
     echo json_encode($openapi, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit();
 });
