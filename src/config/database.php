@@ -7,6 +7,34 @@
  * Hỗ trợ nhiều connections (MySQL, PostgreSQL...) nhưng hiện chỉ dùng MySQL
  */
 
+// Parse Railway MYSQL_PUBLIC_URL nếu có
+$mysqlConfig = [
+    'host' => 'mysql',
+    'port' => '3306',
+    'database' => 'railway',
+    'username' => 'root',
+    'password' => ''
+];
+
+// Nếu có MYSQL_PUBLIC_URL, parse nó
+if ($publicUrl = getenv('MYSQL_PUBLIC_URL')) {
+    $parsed = parse_url($publicUrl);
+    if ($parsed) {
+        $mysqlConfig['host'] = $parsed['host'] ?? 'mysql';
+        $mysqlConfig['port'] = $parsed['port'] ?? '3306';
+        $mysqlConfig['database'] = ltrim($parsed['path'] ?? '/railway', '/');
+        $mysqlConfig['username'] = $parsed['user'] ?? 'root';
+        $mysqlConfig['password'] = $parsed['pass'] ?? '';
+    }
+} else {
+    // Fallback: Đọc từng biến riêng lẻ
+    $mysqlConfig['host'] = getenv('MYSQLHOST') ?: 'mysql';
+    $mysqlConfig['port'] = getenv('MYSQLPORT') ?: '3306';
+    $mysqlConfig['database'] = getenv('MYSQLDATABASE') ?: 'railway';
+    $mysqlConfig['username'] = getenv('MYSQLUSER') ?: 'root';
+    $mysqlConfig['password'] = getenv('MYSQLPASSWORD') ?: '';
+}
+
 return [
     // Connection mặc định sẽ dùng (key trong 'connections')
     'default' => 'mysql',
@@ -14,14 +42,14 @@ return [
     // Danh sách các kết nối database
     'connections' => [
         'mysql' => [
-            'driver'    => 'mysql', // Loại database
+            'driver'    => 'mysql',
             
-            // Thông tin kết nối - đọc từ biến môi trường hoặc dùng giá trị mặc định
-            'host'      => getenv('DB_HOST') ?: (getenv('MYSQLHOST') ?: 'mysql'), // Railway dùng MYSQLHOST
-            'port'      => getenv('DB_PORT') ?: (getenv('MYSQLPORT') ?: '3306'), // Railway dùng MYSQLPORT
-            'database'  => getenv('DB_DATABASE') ?: (getenv('MYSQLDATABASE') ?: 'spicy_noodle_db'), // Railway dùng MYSQLDATABASE
-            'username'  => getenv('DB_USERNAME') ?: (getenv('MYSQLUSER') ?: 'root'), // Railway dùng MYSQLUSER
-            'password'  => getenv('DB_PASSWORD') ?: (getenv('MYSQLPASSWORD') ?: '123456'), // Railway dùng MYSQLPASSWORD
+            // Sử dụng config đã parse từ MYSQL_PUBLIC_URL hoặc biến riêng lẻ
+            'host'      => $mysqlConfig['host'],
+            'port'      => $mysqlConfig['port'],
+            'database'  => $mysqlConfig['database'],
+            'username'  => $mysqlConfig['username'],
+            'password'  => $mysqlConfig['password'],
             
             // Cấu hình charset - quan trọng cho tiếng Việt
             'charset'   => 'utf8mb4', // Hỗ trợ emoji và ký tự đặc biệt
