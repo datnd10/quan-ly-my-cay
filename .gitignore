@@ -22,6 +22,9 @@ Thumbs.db
 .env
 .env.local
 
+# Deployment
+deploy.sh.log
+
 # Composer
 vendor/
 composer.lock
@@ -30,3 +33,6 @@ composer.lock
 node_modules/
 package-lock.json
 yarn.lock
+
+# Documents (keep in repo but don't deploy)
+# Requirement.docx is kept for reference

@@ -173,6 +173,26 @@ class Product extends Model {
 }
 ```
 
+## Deployment
+
+Xem chi tiết trong file [DEPLOYMENT.md](DEPLOYMENT.md)
+
+**Quick deploy:**
+```bash
+# Production
+docker-compose -f docker-compose.prod.yaml up -d --build
+
+# Auto deploy script
+chmod +x deploy.sh
+./deploy.sh
+```
+
+**Deploy options:**
+- VPS (DigitalOcean, AWS, Vultr)
+- Railway.app (free, easiest)
+- Render.com (free)
+- Ngrok (quick demo)
+
 ## Tech Stack
 
 - PHP 8.2
