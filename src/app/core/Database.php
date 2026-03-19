@@ -15,7 +15,7 @@ class Database {
      * Private constructor để implement Singleton
      */
     private function __construct() {
-        $this->config = require __DIR__ . '/../config/database.php';
+        $this->config = require __DIR__ . '/../../config/database.php';
         $this->connect();
     }
     
