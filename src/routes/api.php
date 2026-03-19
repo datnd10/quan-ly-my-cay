@@ -43,6 +43,26 @@ $router->get('test-db', function() {
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 });
 
+// Run migrations - Tạo tất cả bảng tự động
+$router->get('migrate', function() {
+    try {
+        $migration = new Migration();
+        $migration->run();
+        
+        http_response_code(200);
+        echo json_encode([
+            'success' => true,
+            'message' => 'Database migration completed successfully'
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Migration failed: ' . $e->getMessage()
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    }
+});
+
 // Swagger documentation
 $router->get('docs', function() {
     header('Content-Type: text/html; charset=utf-8', true);
