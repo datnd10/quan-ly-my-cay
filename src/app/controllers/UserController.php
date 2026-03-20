@@ -15,7 +15,7 @@ class UserController extends Controller {
     
     /**
      * Lấy danh sách users (có phân trang)
-     * GET /api/users?page=1&per_page=20&role=STAFF
+     * GET /api/users?page=1&per_page=20&role=STAFF&username=admin
      */
     public function index() {
         $page = max(1, (int)$this->getQuery('page', 1));
@@ -24,6 +24,9 @@ class UserController extends Controller {
         $filters = [];
         if ($role = $this->getQuery('role')) {
             $filters['role'] = $role;
+        }
+        if ($username = $this->getQuery('username')) {
+            $filters['username'] = $username;
         }
         
         try {

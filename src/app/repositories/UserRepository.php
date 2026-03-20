@@ -41,6 +41,11 @@ class UserRepository {
             $params['status'] = $filters['status'];
         }
         
+        if (!empty($filters['username'])) {
+            $where[] = "username LIKE :username";
+            $params['username'] = '%' . $filters['username'] . '%';
+        }
+        
         $sql = "SELECT * FROM {$this->table}";
         
         if (!empty($where)) {
@@ -70,6 +75,11 @@ class UserRepository {
         if (!empty($filters['status'])) {
             $where[] = "status = :status";
             $params['status'] = $filters['status'];
+        }
+        
+        if (!empty($filters['username'])) {
+            $where[] = "username LIKE :username";
+            $params['username'] = '%' . $filters['username'] . '%';
         }
         
         $sql = "SELECT COUNT(*) as total FROM {$this->table}";

@@ -69,8 +69,7 @@ class AuthController extends Controller {
         // Sẽ implement sau khi có AuthMiddleware
         $this->success(['message' => 'Get current user info']);
     }
-}
-
+    
     /**
      * Đổi mật khẩu
      * POST /api/auth/change-password
@@ -141,3 +140,5 @@ class AuthController extends Controller {
             return $this->error($e->getMessage(), 400);
         }
     }
+
+}

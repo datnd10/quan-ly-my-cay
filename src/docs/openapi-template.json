@@ -205,7 +205,8 @@
         "parameters": [
           {"name": "page", "in": "query", "schema": {"type": "integer", "default": 1}},
           {"name": "per_page", "in": "query", "schema": {"type": "integer", "default": 20, "maximum": 100}},
-          {"name": "role", "in": "query", "schema": {"type": "string", "enum": ["ADMIN", "STAFF", "CUSTOMER"]}}
+          {"name": "role", "in": "query", "schema": {"type": "string", "enum": ["ADMIN", "STAFF", "CUSTOMER"]}},
+          {"name": "username", "in": "query", "description": "Tìm kiếm theo username", "schema": {"type": "string"}}
         ],
         "responses": {
           "200": {"description": "Danh sách users"}
