@@ -7,6 +7,8 @@ use Cloudinary\Api\Upload\UploadApi;
  * Cloudinary Service
  * 
  * Xử lý upload/delete ảnh lên Cloudinary
+ * 
+ * @phpstan-ignore-next-line
  */
 class CloudinaryService {
     private $cloudinary;

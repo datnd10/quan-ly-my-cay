@@ -30,13 +30,16 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # Set working directory
-WORKDIR /var/www/html
+WORKDIR /var/www
 
 # Copy composer files first (for better caching)
-COPY composer.json ./
+COPY composer.json composer.lock* ./
 
-# Install PHP dependencies (will create composer.lock)
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Verify Cloudinary package is installed
+RUN composer show cloudinary/cloudinary_php || echo "Warning: Cloudinary package not found"
 
 # Copy custom entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/

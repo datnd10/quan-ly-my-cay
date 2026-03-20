@@ -28,7 +28,16 @@ require_once __DIR__ . '/config/constants.php';           // Load constants (kh�
 date_default_timezone_set($config['timezone']); // 'Asia/Ho_Chi_Minh'
 
 // ============================================
-// 4. AUTOLOAD CLASSES
+// 4. LOAD COMPOSER AUTOLOADER
+// ============================================
+// Load Composer autoloader để sử dụng các package từ vendor/
+$vendorAutoload = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($vendorAutoload)) {
+    require_once $vendorAutoload;
+}
+
+// ============================================
+// 5. AUTOLOAD CLASSES
 // ============================================
 // Tự động load class khi được gọi, không cần require_once thủ công
 // VD: Khi gọi "new Router()", PHP sẽ tự tìm và load file Router.php
@@ -57,7 +66,7 @@ spl_autoload_register(function ($class) {
 });
 
 // ============================================
-// 5. CORS HEADERS
+// 6. CORS HEADERS
 // ============================================
 // Cho phép frontend từ domain khác gọi API
 header('Access-Control-Allow-Origin: *');  // Cho phép tất cả domain
@@ -65,7 +74,7 @@ header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS'); // Các
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With'); // Headers được phép
 
 // ============================================
-// 6. XỬ LÝ PREFLIGHT REQUEST
+// 7. XỬ LÝ PREFLIGHT REQUEST
 // ============================================
 // Browser gửi OPTIONS request trước khi gửi request thật (CORS preflight)
 // Ta chỉ cần trả 200 OK và dừng
@@ -75,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // ============================================
-// 7. RETURN CONFIG
+// 8. RETURN CONFIG
 // ============================================
 // Trả về config để index.php sử dụng
 return [
