@@ -21,6 +21,11 @@ class Controller {
      * Success response
      */
     protected function success($data = null, $message = 'Success', $statusCode = 200) {
+        // Convert object to array nếu có method toArray
+        if (is_object($data) && method_exists($data, 'toArray')) {
+            $data = $data->toArray();
+        }
+        
         $this->json([
             'success' => true,
             'message' => $message,
@@ -107,9 +112,19 @@ class Controller {
     protected function paginate($data, $total, $page, $perPage) {
         $totalPages = ceil($total / $perPage);
         
+        // Convert objects to arrays nếu có method toArray
+        $dataArray = [];
+        foreach ($data as $item) {
+            if (is_object($item) && method_exists($item, 'toArray')) {
+                $dataArray[] = $item->toArray();
+            } else {
+                $dataArray[] = $item;
+            }
+        }
+        
         $this->json([
             'success' => true,
-            'data' => $data,
+            'data' => $dataArray,
             'pagination' => [
                 'total' => (int)$total,
                 'per_page' => (int)$perPage,
