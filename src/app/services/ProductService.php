@@ -137,9 +137,9 @@ class ProductService {
      * Xóa file ảnh trong storage
      */
     private function deleteImageFile($imageUrl) {
-        // Nếu là chuỗi nhiều ảnh (ngăn cách bằng dấu phẩy)
-        if (strpos($imageUrl, ',') !== false) {
-            $imageUrls = explode(',', $imageUrl);
+        // Nếu là chuỗi nhiều ảnh (ngăn cách bằng dấu |)
+        if (strpos($imageUrl, '|') !== false) {
+            $imageUrls = explode('|', $imageUrl);
             foreach ($imageUrls as $url) {
                 $this->deleteSingleImage(trim($url));
             }

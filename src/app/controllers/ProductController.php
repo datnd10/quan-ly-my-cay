@@ -88,20 +88,28 @@ class ProductController extends Controller {
         $data = $this->getFormData();
         
         // Xử lý upload nhiều ảnh nếu có
+        // Hỗ trợ cả 'images' và 'images[]' (tùy frontend gửi)
+        $imageFiles = null;
         if (isset($_FILES['images'])) {
+            $imageFiles = $_FILES['images'];
+        } elseif (isset($_FILES['images[]'])) {
+            $imageFiles = $_FILES['images[]'];
+        }
+        
+        if ($imageFiles) {
             // Kiểm tra có file không (cả trường hợp 1 file hoặc nhiều file)
             $hasFiles = false;
-            if (is_array($_FILES['images']['name'])) {
-                $hasFiles = !empty($_FILES['images']['name'][0]);
+            if (is_array($imageFiles['name'])) {
+                $hasFiles = !empty($imageFiles['name'][0]);
             } else {
-                $hasFiles = !empty($_FILES['images']['name']);
+                $hasFiles = !empty($imageFiles['name']);
             }
             
             if ($hasFiles) {
                 try {
-                    $imageUrls = $this->handleMultipleImageUpload($_FILES['images']);
-                    // Lưu dạng string ngăn cách bằng dấu phẩy
-                    $data['image_url'] = implode(',', $imageUrls);
+                    $imageUrls = $this->handleMultipleImageUpload($imageFiles);
+                    // Lưu dạng string ngăn cách bằng dấu |
+                    $data['image_url'] = implode('|', $imageUrls);
                 } catch (Exception $e) {
                     return $this->error($e->getMessage(), 422);
                 }
@@ -142,20 +150,28 @@ class ProductController extends Controller {
         $data = $this->getFormData();
         
         // Xử lý upload nhiều ảnh mới nếu có
+        // Hỗ trợ cả 'images' và 'images[]' (tùy frontend gửi)
+        $imageFiles = null;
         if (isset($_FILES['images'])) {
+            $imageFiles = $_FILES['images'];
+        } elseif (isset($_FILES['images[]'])) {
+            $imageFiles = $_FILES['images[]'];
+        }
+        
+        if ($imageFiles) {
             // Kiểm tra có file không (cả trường hợp 1 file hoặc nhiều file)
             $hasFiles = false;
-            if (is_array($_FILES['images']['name'])) {
-                $hasFiles = !empty($_FILES['images']['name'][0]);
+            if (is_array($imageFiles['name'])) {
+                $hasFiles = !empty($imageFiles['name'][0]);
             } else {
-                $hasFiles = !empty($_FILES['images']['name']);
+                $hasFiles = !empty($imageFiles['name']);
             }
             
             if ($hasFiles) {
                 try {
-                    $imageUrls = $this->handleMultipleImageUpload($_FILES['images']);
-                    // Lưu dạng string ngăn cách bằng dấu phẩy
-                    $data['image_url'] = implode(',', $imageUrls);
+                    $imageUrls = $this->handleMultipleImageUpload($imageFiles);
+                    // Lưu dạng string ngăn cách bằng dấu |
+                    $data['image_url'] = implode('|', $imageUrls);
                 } catch (Exception $e) {
                     return $this->error($e->getMessage(), 422);
                 }
@@ -450,10 +466,10 @@ class ProductController extends Controller {
     }
     
     /**
-     * Xóa nhiều ảnh (string ngăn cách bằng dấu phẩy)
+     * Xóa nhiều ảnh (string ngăn cách bằng dấu |)
      */
     private function deleteMultipleImages($imageUrlString) {
-        $imageUrls = explode(',', $imageUrlString);
+        $imageUrls = explode('|', $imageUrlString);
         foreach ($imageUrls as $url) {
             $url = trim($url);
             

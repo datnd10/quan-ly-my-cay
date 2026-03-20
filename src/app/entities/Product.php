@@ -46,9 +46,9 @@ class Product {
         // Parse image_url thành mảng nếu có nhiều ảnh
         $images = [];
         if (!empty($this->image_url)) {
-            if (strpos($this->image_url, ',') !== false) {
-                // Nhiều ảnh, split bằng dấu phẩy
-                $images = array_map('trim', explode(',', $this->image_url));
+            if (strpos($this->image_url, '|') !== false) {
+                // Nhiều ảnh, split bằng dấu |
+                $images = array_map('trim', explode('|', $this->image_url));
             } else {
                 // 1 ảnh
                 $images = [$this->image_url];
