@@ -51,6 +51,13 @@ class ProductService {
             if (!$category) {
                 throw new Exception('Danh mục không tồn tại');
             }
+            
+            // Kiểm tra tên sản phẩm trùng trong cùng category
+            if ($this->productRepo->existsByNameAndCategory($data['name'], $data['category_id'])) {
+                throw new ValidationException('Dữ liệu không hợp lệ', [
+                    'name' => 'Tên sản phẩm đã tồn tại trong danh mục này'
+                ]);
+            }
         }
         
         return $this->productRepo->create($data);
@@ -78,6 +85,28 @@ class ProductService {
             if (!$category) {
                 throw new Exception('Danh mục không tồn tại');
             }
+            
+            // Kiểm tra tên trùng trong category mới
+            if (isset($data['name'])) {
+                if ($this->productRepo->existsByNameAndCategory($data['name'], $data['category_id'], $id)) {
+                    throw new ValidationException('Dữ liệu không hợp lệ', [
+                        'name' => 'Tên sản phẩm đã tồn tại trong danh mục này'
+                    ]);
+                }
+            }
+        } elseif (isset($data['name'])) {
+            // Chỉ update tên, giữ nguyên category
+            $categoryId = $product->category_id ?? null;
+            if ($categoryId && $this->productRepo->existsByNameAndCategory($data['name'], $categoryId, $id)) {
+                throw new ValidationException('Dữ liệu không hợp lệ', [
+                    'name' => 'Tên sản phẩm đã tồn tại trong danh mục này'
+                ]);
+            }
+        }
+        
+        // Xóa ảnh cũ nếu có ảnh mới
+        if (isset($data['image_url']) && !empty($data['image_url']) && !empty($product->image_url)) {
+            $this->deleteImageFile($product->image_url);
         }
         
         return $this->productRepo->update($id, $data);
@@ -96,7 +125,42 @@ class ProductService {
         // TODO: Kiểm tra product có trong order nào không
         // Nếu có thì không cho xóa hoặc soft delete
         
+        // Xóa ảnh nếu có
+        if (!empty($product->image_url)) {
+            $this->deleteImageFile($product->image_url);
+        }
+        
         return $this->productRepo->delete($id);
+    }
+    
+    /**
+     * Xóa file ảnh trong storage
+     */
+    private function deleteImageFile($imageUrl) {
+        // Nếu là chuỗi nhiều ảnh (ngăn cách bằng dấu phẩy)
+        if (strpos($imageUrl, ',') !== false) {
+            $imageUrls = explode(',', $imageUrl);
+            foreach ($imageUrls as $url) {
+                $this->deleteSingleImage(trim($url));
+            }
+        } else {
+            $this->deleteSingleImage($imageUrl);
+        }
+    }
+    
+    /**
+     * Xóa 1 file ảnh
+     */
+    private function deleteSingleImage($imageUrl) {
+        // Lấy tên file từ URL
+        // Ví dụ: /uploads/products/abc.jpg -> abc.jpg
+        $filename = basename($imageUrl);
+        $filepath = __DIR__ . '/../../storage/uploads/' . $filename;
+        
+        // Xóa file nếu tồn tại
+        if (file_exists($filepath)) {
+            @unlink($filepath);
+        }
     }
     
     /**

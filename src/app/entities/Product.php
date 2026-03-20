@@ -43,13 +43,26 @@ class Product {
      * Convert to array
      */
     public function toArray() {
+        // Parse image_url thành mảng nếu có nhiều ảnh
+        $images = [];
+        if (!empty($this->image_url)) {
+            if (strpos($this->image_url, ',') !== false) {
+                // Nhiều ảnh, split bằng dấu phẩy
+                $images = array_map('trim', explode(',', $this->image_url));
+            } else {
+                // 1 ảnh
+                $images = [$this->image_url];
+            }
+        }
+        
         $data = [
             'id' => (int)$this->id,
             'category_id' => $this->category_id ? (int)$this->category_id : null,
             'name' => $this->name,
             'price' => (float)$this->price,
             'description' => $this->description,
-            'image_url' => $this->image_url,
+            'image_url' => $this->image_url, // Giữ nguyên string gốc
+            'images' => $images, // Mảng ảnh cho FE
             'stock_quantity' => (int)$this->stock_quantity,
             'min_stock' => (int)$this->min_stock,
             'status' => (int)$this->status,

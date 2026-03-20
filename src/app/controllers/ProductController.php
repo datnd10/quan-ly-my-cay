@@ -67,46 +67,89 @@ class ProductController extends Controller {
     /**
      * Tạo product mới
      * POST /api/products
-     * Body: { "category_id": 1, "name": "Mỳ cay level 1", "price": 50000, "description": "...", "stock_quantity": 100, "min_stock": 10 }
+     * Body: multipart/form-data với các field: category_id, name, price, description, stock_quantity, min_stock, images[] (multiple files)
+     * Hoặc JSON nếu không có ảnh
      * Admin/Staff only
      */
     public function store() {
         // Yêu cầu role ADMIN hoặc STAFF
         $this->requireRole([ROLE_ADMIN, ROLE_STAFF]);
         
-        $data = $this->getBody();
+        // Lấy data từ POST (multipart/form-data hoặc JSON)
+        $data = $this->getFormData();
+        
+        // Xử lý upload nhiều ảnh nếu có
+        if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
+            try {
+                $imageUrls = $this->handleMultipleImageUpload($_FILES['images']);
+                // Lưu dạng string ngăn cách bằng dấu phẩy
+                $data['image_url'] = implode(',', $imageUrls);
+            } catch (Exception $e) {
+                return $this->error($e->getMessage(), 422);
+            }
+        }
         
         try {
             $product = $this->productService->createProduct($data);
             return $this->success($product, 'Tạo sản phẩm thành công', 201);
             
+        } catch (ValidationException $e) {
+            // Nếu có lỗi và đã upload ảnh, xóa tất cả ảnh đi
+            if (isset($data['image_url'])) {
+                $this->deleteMultipleImages($data['image_url']);
+            }
+            return $this->error($e->getMessage(), 422, $e->getErrors());
         } catch (Exception $e) {
-            $statusCode = isset($e->errors) ? 422 : 500;
-            $errors = isset($e->errors) ? $e->errors : null;
-            return $this->error($e->getMessage(), $statusCode, $errors);
+            // Nếu có lỗi và đã upload ảnh, xóa tất cả ảnh đi
+            if (isset($data['image_url'])) {
+                $this->deleteMultipleImages($data['image_url']);
+            }
+            return $this->error($e->getMessage(), 500);
         }
     }
     
     /**
      * Cập nhật product
      * PUT /api/products/{id}
-     * Body: { "name": "Mỳ cay level 2", "price": 60000, ... }
+     * Body: multipart/form-data với các field cần update, có thể có images[] (multiple files)
+     * Hoặc JSON nếu không có ảnh
      * Admin/Staff only
      */
     public function update($id) {
         // Yêu cầu role ADMIN hoặc STAFF
         $this->requireRole([ROLE_ADMIN, ROLE_STAFF]);
         
-        $data = $this->getBody();
+        // Lấy data từ POST (multipart/form-data hoặc JSON)
+        $data = $this->getFormData();
+        
+        // Xử lý upload nhiều ảnh mới nếu có
+        if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
+            try {
+                $imageUrls = $this->handleMultipleImageUpload($_FILES['images']);
+                // Lưu dạng string ngăn cách bằng dấu phẩy
+                $data['image_url'] = implode(',', $imageUrls);
+            } catch (Exception $e) {
+                return $this->error($e->getMessage(), 422);
+            }
+        }
         
         try {
             $product = $this->productService->updateProduct($id, $data);
             return $this->success($product, 'Cập nhật sản phẩm thành công');
             
+        } catch (ValidationException $e) {
+            // Nếu có lỗi và đã upload ảnh mới, xóa ảnh mới đi
+            if (isset($data['image_url'])) {
+                $this->deleteMultipleImages($data['image_url']);
+            }
+            return $this->error($e->getMessage(), 422, $e->getErrors());
         } catch (Exception $e) {
-            $statusCode = isset($e->errors) ? 422 : ($e->getMessage() === 'Không tìm thấy sản phẩm' ? 404 : 500);
-            $errors = isset($e->errors) ? $e->errors : null;
-            return $this->error($e->getMessage(), $statusCode, $errors);
+            // Nếu có lỗi và đã upload ảnh mới, xóa ảnh mới đi
+            if (isset($data['image_url'])) {
+                $this->deleteMultipleImages($data['image_url']);
+            }
+            $statusCode = ($e->getMessage() === 'Không tìm thấy sản phẩm') ? 404 : 500;
+            return $this->error($e->getMessage(), $statusCode);
         }
     }
     
@@ -182,4 +225,204 @@ class ProductController extends Controller {
             return $this->error($e->getMessage(), 500);
         }
     }
+    
+    /**
+     * Upload ảnh sản phẩm
+     * POST /api/products/upload-image
+     * Body: multipart/form-data với field "image"
+     * Admin/Staff only
+     */
+    public function uploadImage() {
+        // Yêu cầu role ADMIN hoặc STAFF
+        $this->requireRole([ROLE_ADMIN, ROLE_STAFF]);
+        
+        // Kiểm tra có file không
+        if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+            return $this->error('Vui lòng chọn file ảnh', 422);
+        }
+        
+        $file = $_FILES['image'];
+        
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file['type'], $allowedTypes)) {
+            return $this->error('Chỉ chấp nhận file ảnh (jpg, png, gif, webp)', 422);
+        }
+        
+        // Validate file size (max 5MB)
+        $maxSize = 5 * 1024 * 1024; // 5MB
+        if ($file['size'] > $maxSize) {
+            return $this->error('Kích thước file không được vượt quá 5MB', 422);
+        }
+        
+        try {
+            // Tạo tên file unique
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'product_' . time() . '_' . uniqid() . '.' . $extension;
+            
+            // Đường dẫn lưu file
+            $uploadDir = __DIR__ . '/../../storage/uploads/';
+            
+            // Tạo thư mục nếu chưa tồn tại
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $filepath = $uploadDir . $filename;
+            
+            // Di chuyển file
+            if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+                throw new Exception('Không thể lưu file');
+            }
+            
+            // Trả về URL của ảnh
+            $imageUrl = '/uploads/' . $filename;
+            
+            return $this->success([
+                'image_url' => $imageUrl,
+                'filename' => $filename
+            ], 'Upload ảnh thành công');
+            
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+    
+    /**
+     * Lấy data từ form (multipart/form-data hoặc JSON)
+     */
+    private function getFormData() {
+        // Nếu là multipart/form-data (có file upload)
+        if (!empty($_POST)) {
+            return $_POST;
+        }
+        
+        // Nếu là JSON
+        return $this->getBody();
+    }
+    
+    /**
+     * Xử lý upload nhiều ảnh
+     */
+    private function handleMultipleImageUpload($files) {
+        $uploadedUrls = [];
+        $uploadDir = __DIR__ . '/../../storage/uploads/';
+        
+        // Tạo thư mục nếu chưa tồn tại
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        $maxSize = 5 * 1024 * 1024; // 5MB
+        
+        // Xử lý từng file
+        $fileCount = count($files['name']);
+        
+        for ($i = 0; $i < $fileCount; $i++) {
+            // Bỏ qua file lỗi
+            if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+                continue;
+            }
+            
+            // Validate type
+            if (!in_array($files['type'][$i], $allowedTypes)) {
+                // Xóa các ảnh đã upload trước đó
+                foreach ($uploadedUrls as $url) {
+                    $this->deleteUploadedImage($url);
+                }
+                throw new Exception('Chỉ chấp nhận file ảnh (jpg, png, gif, webp)');
+            }
+            
+            // Validate size
+            if ($files['size'][$i] > $maxSize) {
+                // Xóa các ảnh đã upload trước đó
+                foreach ($uploadedUrls as $url) {
+                    $this->deleteUploadedImage($url);
+                }
+                throw new Exception('Kích thước file không được vượt quá 5MB');
+            }
+            
+            // Tạo tên file unique
+            $extension = pathinfo($files['name'][$i], PATHINFO_EXTENSION);
+            $filename = 'product_' . time() . '_' . uniqid() . '.' . $extension;
+            $filepath = $uploadDir . $filename;
+            
+            // Di chuyển file
+            if (!move_uploaded_file($files['tmp_name'][$i], $filepath)) {
+                // Xóa các ảnh đã upload trước đó
+                foreach ($uploadedUrls as $url) {
+                    $this->deleteUploadedImage($url);
+                }
+                throw new Exception('Không thể lưu file');
+            }
+            
+            $uploadedUrls[] = '/uploads/' . $filename;
+        }
+        
+        return $uploadedUrls;
+    }
+    
+    /**
+     * Xử lý upload ảnh
+     */
+    private function handleImageUpload($file) {
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file['type'], $allowedTypes)) {
+            throw new Exception('Chỉ chấp nhận file ảnh (jpg, png, gif, webp)');
+        }
+        
+        // Validate file size (max 5MB)
+        $maxSize = 5 * 1024 * 1024; // 5MB
+        if ($file['size'] > $maxSize) {
+            throw new Exception('Kích thước file không được vượt quá 5MB');
+        }
+        
+        // Tạo tên file unique
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'product_' . time() . '_' . uniqid() . '.' . $extension;
+        
+        // Đường dẫn lưu file
+        $uploadDir = __DIR__ . '/../../storage/uploads/';
+        
+        // Tạo thư mục nếu chưa tồn tại
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        $filepath = $uploadDir . $filename;
+        
+        // Di chuyển file
+        if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+            throw new Exception('Không thể lưu file');
+        }
+        
+        // Trả về URL của ảnh
+        return '/uploads/' . $filename;
+    }
+    
+    /**
+     * Xóa ảnh đã upload (khi có lỗi)
+     */
+    private function deleteUploadedImage($imageUrl) {
+        $filename = basename($imageUrl);
+        $filepath = __DIR__ . '/../../storage/uploads/' . $filename;
+        
+        if (file_exists($filepath)) {
+            @unlink($filepath);
+        }
+    }
+    
+    /**
+     * Xóa nhiều ảnh (string ngăn cách bằng dấu phẩy)
+     */
+    private function deleteMultipleImages($imageUrlString) {
+        $imageUrls = explode(',', $imageUrlString);
+        foreach ($imageUrls as $url) {
+            $this->deleteUploadedImage(trim($url));
+        }
+    }
 }
+

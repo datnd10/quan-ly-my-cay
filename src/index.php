@@ -30,6 +30,32 @@ $method = $_SERVER['REQUEST_METHOD'];
 // VD: Request đến http://localhost:8000/api/products/123
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH); // => /api/products/123
 
+// ============================================
+// 2.1. SERVE STATIC FILES (UPLOADED IMAGES)
+// ============================================
+// Nếu request đến /uploads/*, serve file trực tiếp
+if (strpos($uri, '/uploads/') === 0) {
+    $filename = basename($uri);
+    $filepath = __DIR__ . '/../storage/uploads/' . $filename;
+    
+    if (file_exists($filepath)) {
+        // Xác định MIME type
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $filepath);
+        finfo_close($finfo);
+        
+        // Set header và output file
+        header('Content-Type: ' . $mimeType);
+        header('Content-Length: ' . filesize($filepath));
+        readfile($filepath);
+        exit();
+    } else {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'File not found']);
+        exit();
+    }
+}
+
 // Bỏ prefix '/api' để còn 'products/123'
 $uri = str_replace($config['api_prefix'], '', $uri); // => /products/123
 

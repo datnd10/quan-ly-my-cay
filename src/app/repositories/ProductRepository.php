@@ -203,6 +203,22 @@ class ProductRepository {
     }
     
     /**
+     * Kiểm tra tên sản phẩm đã tồn tại trong category chưa
+     */
+    public function existsByNameAndCategory($name, $categoryId, $excludeId = null) {
+        $sql = "SELECT COUNT(*) as count FROM products WHERE name = ? AND category_id = ?";
+        $params = [$name, $categoryId];
+        
+        if ($excludeId) {
+            $sql .= " AND id != ?";
+            $params[] = $excludeId;
+        }
+        
+        $result = $this->db->fetchOne($sql, $params);
+        return $result && $result['count'] > 0;
+    }
+    
+    /**
      * Lấy sản phẩm sắp hết hàng
      */
     public function getLowStockProducts() {

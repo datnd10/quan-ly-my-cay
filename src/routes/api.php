@@ -126,10 +126,12 @@ $router->delete('categories/{id}', 'CategoryController@destroy');
 // ============================================
 // PRODUCT ROUTES
 // ============================================
+$router->get('products/low-stock', 'ProductController@lowStock');
 $router->get('products', 'ProductController@index');
 $router->get('products/{id}', 'ProductController@show');
 $router->post('products', 'ProductController@store');
 $router->put('products/{id}', 'ProductController@update');
+$router->put('products/{id}/stock', 'ProductController@updateStock');
 $router->delete('products/{id}', 'ProductController@destroy');
 
 // ============================================
