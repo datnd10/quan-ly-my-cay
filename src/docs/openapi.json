@@ -479,7 +479,8 @@
       "get": {
         "tags": ["Categories"],
         "summary": "Danh sách danh mục (có phân trang)",
-        "description": "Public API - không cần auth",
+        "description": "Admin/Staff xem danh mục",
+        "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "page", "in": "query", "schema": {"type": "integer"}},
           {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
@@ -527,7 +528,8 @@
       "get": {
         "tags": ["Categories"],
         "summary": "Chi tiết danh mục",
-        "description": "Public API",
+        "description": "Admin/Staff xem chi tiết",
+        "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
         ],
