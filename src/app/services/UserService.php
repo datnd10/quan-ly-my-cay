@@ -158,9 +158,7 @@ class UserService {
         }
         
         if (!empty($errors)) {
-            $exception = new Exception('Dữ liệu không hợp lệ');
-            $exception->errors = $errors;
-            throw $exception;
+            throw new ValidationException('Dữ liệu không hợp lệ', $errors);
         }
     }
 }

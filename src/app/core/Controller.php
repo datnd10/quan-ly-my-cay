@@ -45,6 +45,30 @@ class Controller {
     }
     
     /**
+     * Handle exception và trả về response phù hợp
+     */
+    protected function handleException($e) {
+        if ($e instanceof ValidationException) {
+            return $this->error($e->getMessage(), 422, $e->getErrors());
+        }
+        
+        // Các exception khác
+        $statusCode = 500;
+        $message = $e->getMessage();
+        
+        // Map một số message thường gặp sang status code phù hợp
+        if (strpos($message, 'Không tìm thấy') !== false) {
+            $statusCode = 404;
+        } elseif (strpos($message, 'đã tồn tại') !== false) {
+            $statusCode = 409; // Conflict
+        } elseif (strpos($message, 'không được phép') !== false || strpos($message, 'không có quyền') !== false) {
+            $statusCode = 403;
+        }
+        
+        return $this->error($message, $statusCode);
+    }
+    
+    /**
      * Get request body
      */
     protected function getBody() {

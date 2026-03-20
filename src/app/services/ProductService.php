@@ -42,9 +42,7 @@ class ProductService {
         // Validate
         $errors = $this->validateProduct($data);
         if (!empty($errors)) {
-            $exception = new Exception('Dữ liệu không hợp lệ');
-            $exception->errors = $errors;
-            throw $exception;
+            throw new ValidationException('Dữ liệu không hợp lệ', $errors);
         }
         
         // Kiểm tra category tồn tại
@@ -71,9 +69,7 @@ class ProductService {
         // Validate
         $errors = $this->validateProduct($data, true);
         if (!empty($errors)) {
-            $exception = new Exception('Dữ liệu không hợp lệ');
-            $exception->errors = $errors;
-            throw $exception;
+            throw new ValidationException('Dữ liệu không hợp lệ', $errors);
         }
         
         // Kiểm tra category tồn tại (nếu có update)
