@@ -247,7 +247,6 @@ class CustomerController extends Controller {
             return $this->error($e->getMessage(), $statusCode, $errors);
         }
     }
-}
 
     /**
      * Customer xem lịch sử điểm của chính mình

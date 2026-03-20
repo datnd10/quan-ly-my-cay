@@ -33,6 +33,7 @@ class CategoryController extends Controller {
      * GET /api/categories?page=1&per_page=20&search=my
      */
     public function index() {
+        $this->requireRole([ROLE_ADMIN, ROLE_STAFF]);
         $page = max(1, (int)$this->getQuery('page', 1));
         $perPage = min(100, max(1, (int)$this->getQuery('per_page', 20)));
         
@@ -55,6 +56,7 @@ class CategoryController extends Controller {
      * GET /api/categories/{id}
      */
     public function show($id) {
+        $this->requireRole([ROLE_ADMIN, ROLE_STAFF]);
         try {
             $category = $this->categoryService->getCategoryById($id);
             return $this->success($category);
