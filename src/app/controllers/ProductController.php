@@ -291,6 +291,9 @@ class ProductController extends Controller {
         $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         $maxSize = 5 * 1024 * 1024; // 5MB
         
+        // Debug: Log số file nhận được
+        error_log('Files received: ' . print_r($files, true));
+        
         // Normalize: nếu upload 1 file, PHP không tự động tạo array
         if (!is_array($files['name'])) {
             $files = [
@@ -302,12 +305,22 @@ class ProductController extends Controller {
             ];
         }
         
+        // Debug: Log số file sau normalize
+        error_log('File count after normalize: ' . count($files['name']));
+        
         $fileCount = count($files['name']);
         $tempFiles = [];
         
+        // Debug: Log từng file
+        error_log('Processing ' . $fileCount . ' files');
+        
         for ($i = 0; $i < $fileCount; $i++) {
+            // Debug
+            error_log("File $i: name={$files['name'][$i]}, error={$files['error'][$i]}, size={$files['size'][$i]}");
+            
             // Bỏ qua file lỗi
             if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+                error_log("File $i skipped due to error: {$files['error'][$i]}");
                 continue;
             }
             
@@ -334,10 +347,16 @@ class ProductController extends Controller {
         
         // Upload lên Cloudinary
         try {
+            error_log('Uploading ' . count($tempFiles) . ' files to Cloudinary');
             $uploadedResults = $this->cloudinaryService->uploadMultipleImages($tempFiles, 'products');
             
+            error_log('Upload results: ' . print_r($uploadedResults, true));
+            
             // Trả về mảng URLs
-            return array_column($uploadedResults, 'url');
+            $urls = array_column($uploadedResults, 'url');
+            error_log('Final URLs: ' . print_r($urls, true));
+            
+            return $urls;
             
         } catch (Exception $e) {
             throw new Exception('Upload ảnh thất bại: ' . $e->getMessage());
