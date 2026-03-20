@@ -317,6 +317,18 @@ class ProductController extends Controller {
         $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         $maxSize = 5 * 1024 * 1024; // 5MB
         
+        // Normalize: nếu upload 1 file, PHP không tự động tạo array
+        // Chuyển thành array format để xử lý thống nhất
+        if (!is_array($files['name'])) {
+            $files = [
+                'name' => [$files['name']],
+                'type' => [$files['type']],
+                'tmp_name' => [$files['tmp_name']],
+                'error' => [$files['error']],
+                'size' => [$files['size']]
+            ];
+        }
+        
         // Xử lý từng file
         $fileCount = count($files['name']);
         
