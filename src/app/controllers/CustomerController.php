@@ -76,17 +76,17 @@ class CustomerController extends Controller {
             $customer = $this->customerService->createCustomer($data);
             return $this->success($customer, 'Tạo khách hàng thành công', 201);
             
+        } catch (ValidationException $e) {
+            return $this->error($e->getMessage(), 422, $e->getErrors());
         } catch (Exception $e) {
-            $statusCode = isset($e->errors) ? 422 : 500;
-            $errors = isset($e->errors) ? $e->errors : null;
-            return $this->error($e->getMessage(), $statusCode, $errors);
+            return $this->error($e->getMessage(), 500);
         }
     }
     
     /**
      * Cập nhật customer
      * PUT /api/customers/{id}
-     * Body: { "name": "Nguyen Van B", "email": "b@gmail.com", "address": "123 ABC" }
+     * Body: { "name": "Nguyen Van B", "email": "b@gmail.com" }
      */
     public function update($id) {
         // Yêu cầu role ADMIN hoặc STAFF
@@ -98,10 +98,11 @@ class CustomerController extends Controller {
             $customer = $this->customerService->updateCustomer($id, $data);
             return $this->success($customer, 'Cập nhật khách hàng thành công');
             
+        } catch (ValidationException $e) {
+            return $this->error($e->getMessage(), 422, $e->getErrors());
         } catch (Exception $e) {
-            $statusCode = isset($e->errors) ? 422 : ($e->getMessage() === 'Không tìm thấy khách hàng' ? 404 : 500);
-            $errors = isset($e->errors) ? $e->errors : null;
-            return $this->error($e->getMessage(), $statusCode, $errors);
+            $statusCode = ($e->getMessage() === 'Không tìm thấy khách hàng') ? 404 : 500;
+            return $this->error($e->getMessage(), $statusCode);
         }
     }
     
@@ -214,7 +215,7 @@ class CustomerController extends Controller {
      /**
      * Khách hàng tự cập nhật thông tin cá nhân
      * PUT /api/customers/profile
-     * Body: { "name": "Nguyen Van A", "email": "a@gmail.com", "address": "123 ABC" }
+     * Body: { "name": "Nguyen Van A", "email": "a@gmail.com" }
      */
     public function updateProfile() {
         // Lấy thông tin user từ token
@@ -241,10 +242,10 @@ class CustomerController extends Controller {
             
             return $this->success($updatedCustomer, 'Cập nhật thông tin thành công');
             
+        } catch (ValidationException $e) {
+            return $this->error($e->getMessage(), 422, $e->getErrors());
         } catch (Exception $e) {
-            $statusCode = isset($e->errors) ? 422 : 500;
-            $errors = isset($e->errors) ? $e->errors : null;
-            return $this->error($e->getMessage(), $statusCode, $errors);
+            return $this->error($e->getMessage(), 500);
         }
     }
 

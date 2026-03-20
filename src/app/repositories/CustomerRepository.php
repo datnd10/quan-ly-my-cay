@@ -81,7 +81,7 @@ class CustomerRepository {
         }
         
         $result = $this->db->fetchOne($sql, $params);
-        return (int)$result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
     
     /**
@@ -136,7 +136,7 @@ class CustomerRepository {
         }
         
         $result = $this->db->fetchOne($sql, $params);
-        return $result['count'] > 0;
+        return $result && $result['count'] > 0;
     }
     
     /**

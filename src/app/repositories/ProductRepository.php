@@ -51,7 +51,8 @@ class ProductRepository {
         
         // Đếm tổng số
         $countSql = preg_replace('/SELECT .+ FROM/', 'SELECT COUNT(*) as total FROM', $sql);
-        $total = $this->db->fetchOne($countSql, $params)['total'];
+        $countResult = $this->db->fetchOne($countSql, $params);
+        $total = $countResult ? $countResult['total'] : 0;
         
         // Lấy data với phân trang
         $sql .= " ORDER BY p.created_at DESC LIMIT ? OFFSET ?";
@@ -198,7 +199,7 @@ class ProductRepository {
     public function exists($id) {
         $sql = "SELECT COUNT(*) as count FROM products WHERE id = ?";
         $result = $this->db->fetchOne($sql, [$id]);
-        return $result['count'] > 0;
+        return $result && $result['count'] > 0;
     }
     
     /**

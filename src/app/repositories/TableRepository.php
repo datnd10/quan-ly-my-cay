@@ -73,7 +73,8 @@ class TableRepository {
         
         // Đếm tổng số
         $countSql = preg_replace('/SELECT .+ FROM/', 'SELECT COUNT(*) as total FROM', $sql);
-        $total = $this->db->fetchOne($countSql, $params)['total'];
+        $countResult = $this->db->fetchOne($countSql, $params);
+        $total = $countResult ? $countResult['total'] : 0;
         
         // Lấy data với phân trang
         $sql .= " ORDER BY table_number ASC LIMIT ? OFFSET ?";
@@ -197,7 +198,7 @@ class TableRepository {
         }
         
         $result = $this->db->fetchOne($sql, $params);
-        return $result['count'] > 0;
+        return $result && $result['count'] > 0;
     }
     
     /**

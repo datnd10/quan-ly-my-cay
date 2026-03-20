@@ -95,7 +95,6 @@ class CustomerService {
                 'name' => $data['name'],
                 'phone' => $data['phone'],
                 'email' => $data['email'] ?? null,
-                'address' => $data['address'] ?? null,
                 'points' => 0
             ]);
             
@@ -131,7 +130,7 @@ class CustomerService {
         
         // Chỉ update các field của customer
         $updateData = [];
-        $allowedFields = ['name', 'phone', 'email', 'address'];
+        $allowedFields = ['name', 'phone', 'email'];
         
         foreach ($allowedFields as $field) {
             if (isset($data[$field])) {

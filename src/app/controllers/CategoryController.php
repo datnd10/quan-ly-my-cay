@@ -81,10 +81,10 @@ class CategoryController extends Controller {
             $category = $this->categoryService->createCategory($data);
             return $this->success($category, 'Tạo danh mục thành công', 201);
             
+        } catch (ValidationException $e) {
+            return $this->error($e->getMessage(), 422, $e->getErrors());
         } catch (Exception $e) {
-            $statusCode = isset($e->errors) ? 422 : 500;
-            $errors = isset($e->errors) ? $e->errors : null;
-            return $this->error($e->getMessage(), $statusCode, $errors);
+            return $this->error($e->getMessage(), 500);
         }
     }
     
@@ -103,10 +103,11 @@ class CategoryController extends Controller {
             $category = $this->categoryService->updateCategory($id, $data);
             return $this->success($category, 'Cập nhật danh mục thành công');
             
+        } catch (ValidationException $e) {
+            return $this->error($e->getMessage(), 422, $e->getErrors());
         } catch (Exception $e) {
-            $statusCode = isset($e->errors) ? 422 : ($e->getMessage() === 'Không tìm thấy danh mục' ? 404 : 500);
-            $errors = isset($e->errors) ? $e->errors : null;
-            return $this->error($e->getMessage(), $statusCode, $errors);
+            $statusCode = ($e->getMessage() === 'Không tìm thấy danh mục') ? 404 : 500;
+            return $this->error($e->getMessage(), $statusCode);
         }
     }
     

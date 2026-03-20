@@ -133,6 +133,6 @@ class CategoryRepository {
     public function countProducts($categoryId) {
         $sql = "SELECT COUNT(*) as count FROM products WHERE category_id = :category_id";
         $result = $this->db->fetchOne($sql, ['category_id' => $categoryId]);
-        return (int)$result['count'];
+        return $result ? (int)$result['count'] : 0;
     }
 }

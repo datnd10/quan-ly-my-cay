@@ -38,7 +38,7 @@ class PointTransactionRepository {
     public function countByCustomerId($customerId) {
         $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE customer_id = :customer_id";
         $result = $this->db->fetchOne($sql, ['customer_id' => $customerId]);
-        return (int)$result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
     
     /**

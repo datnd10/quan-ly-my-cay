@@ -74,19 +74,7 @@ $router->get('env-check', function() {
         'debug' => $config['debug'],
         'url' => $config['url'],
         'railway_detected' => getenv('RAILWAY_ENVIRONMENT') ? true : false,
-        'mysql_connected' => getenv('MYSQLHOST') ? true : false
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-});
-
-// Get password requirements
-$router->get('password-requirements', function() {
-    http_response_code(200);
-    echo json_encode([
-        'success' => true,
-        'data' => [
-            'requirements' => PasswordValidator::getRequirements(),
-            'example' => 'Example@123'
-        ]
+        'mysql_connected' => getenv('MYSQLHOST') || getenv('MYSQL_PUBLIC_URL') ? true : false
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 });
 
@@ -98,30 +86,21 @@ $router->get('docs', function() {
 });
 
 $router->get('docs/openapi.json', function() {
-    // Đọc file generated từ annotations
-    $openApiFile = __DIR__ . '/../docs/openapi.json';
+    // Đọc file template
+    $openapi = json_decode(file_get_contents(__DIR__ . '/../docs/openapi-template.json'), true);
     
-    // Nếu chưa có file, generate mặc định
-    if (!file_exists($openApiFile)) {
-        $openapi = [
-            'openapi' => '3.0.0',
-            'info' => [
-                'title' => 'Spicy Noodle API',
-                'version' => '1.0.0',
-                'description' => 'REST API - Run: php generate-openapi.php to update docs'
-            ],
-            'servers' => [
-                ['url' => 'https://seoul-spicy-production.up.railway.app/api'],
-                ['url' => 'http://localhost:8000/api']
-            ],
-            'paths' => []
-        ];
-    } else {
-        $openapi = json_decode(file_get_contents($openApiFile), true);
-    }
+    // Force Railway domain
+    $openapi['servers'] = [
+        [
+            'url' => 'https://seoul-spicy-production.up.railway.app/api',
+            'description' => 'Production server (Railway)'
+        ]
+    ];
     
     header('Content-Type: application/json; charset=utf-8', true);
     header('Cache-Control: no-cache, no-store, must-revalidate', true);
+    header('Pragma: no-cache', true);
+    header('Expires: 0', true);
     echo json_encode($openapi, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit();
 });
@@ -129,23 +108,32 @@ $router->get('docs/openapi.json', function() {
 // ============================================
 // AUTH ROUTES
 // ============================================
-$router->post('auth/login', 'AuthController@login');
 $router->post('auth/register', 'AuthController@register');
+$router->post('auth/login', 'AuthController@login');
+$router->post('auth/refresh', 'AuthController@refresh');
 $router->get('auth/me', 'AuthController@me');
-$router->post('auth/change-password', 'AuthController@changePassword');
-$router->post('auth/forgot-password', 'AuthController@forgotPassword');
 
 // ============================================
-// USER ROUTES (Admin only)
+// CATEGORY ROUTES
 // ============================================
-$router->get('users', 'UserController@index');
-$router->get('users/{id}', 'UserController@show');
-$router->post('users', 'UserController@store');
-$router->put('users/{id}', 'UserController@update');
-$router->delete('users/{id}', 'UserController@destroy');
+$router->get('categories/all', 'CategoryController@all'); // Public - không cần auth
+$router->get('categories', 'CategoryController@index');
+$router->get('categories/{id}', 'CategoryController@show');
+$router->post('categories', 'CategoryController@store');
+$router->put('categories/{id}', 'CategoryController@update');
+$router->delete('categories/{id}', 'CategoryController@destroy');
 
 // ============================================
-// CUSTOMER ROUTES (Admin/Staff)
+// PRODUCT ROUTES
+// ============================================
+$router->get('products', 'ProductController@index');
+$router->get('products/{id}', 'ProductController@show');
+$router->post('products', 'ProductController@store');
+$router->put('products/{id}', 'ProductController@update');
+$router->delete('products/{id}', 'ProductController@destroy');
+
+// ============================================
+// CUSTOMER ROUTES
 // ============================================
 $router->get('customers', 'CustomerController@index');
 $router->get('customers/{id}', 'CustomerController@show');
@@ -156,41 +144,26 @@ $router->put('customers/{id}/points', 'CustomerController@updatePoints');
 $router->get('customers/{id}/points/history', 'CustomerController@pointHistory');
 $router->delete('customers/{id}', 'CustomerController@destroy');
 
-// Customer tự cập nhật profile
+// Customer self-service routes
 $router->put('customers/profile', 'CustomerController@updateProfile');
-
-// Customer xem lịch sử điểm của mình
 $router->get('customers/my-points/history', 'CustomerController@myPointHistory');
-
-// ============================================
-// CATEGORY ROUTES
-// ============================================
-$router->get('categories/all', 'CategoryController@all'); // Public - lấy tất cả
-$router->get('categories', 'CategoryController@index'); // Public - có phân trang
-$router->get('categories/{id}', 'CategoryController@show'); // Public
-$router->post('categories', 'CategoryController@store')->middleware('AuthMiddleware'); // Admin/Staff
-$router->put('categories/{id}', 'CategoryController@update')->middleware('AuthMiddleware'); // Admin/Staff
-$router->delete('categories/{id}', 'CategoryController@destroy')->middleware('AuthMiddleware'); // Admin only
-
-// ============================================
-// PRODUCT ROUTES
-// ============================================
-$router->get('products/low-stock', 'ProductController@lowStock')->middleware('AuthMiddleware'); // Admin/Staff - phải đặt trước products/{id}
-$router->get('products', 'ProductController@index'); // Public - có phân trang + filter
-$router->get('products/{id}', 'ProductController@show'); // Public
-$router->post('products', 'ProductController@store')->middleware('AuthMiddleware'); // Admin/Staff
-$router->put('products/{id}', 'ProductController@update')->middleware('AuthMiddleware'); // Admin/Staff
-$router->put('products/{id}/stock', 'ProductController@updateStock')->middleware('AuthMiddleware'); // Admin/Staff
-$router->delete('products/{id}', 'ProductController@destroy')->middleware('AuthMiddleware'); // Admin only
 
 // ============================================
 // TABLE ROUTES
 // ============================================
-$router->get('tables/available', 'TableController@available'); // Public - bàn trống
-$router->get('tables/all', 'TableController@all'); // Public - tất cả bàn (không phân trang)
-$router->get('tables', 'TableController@index')->middleware('AuthMiddleware'); // Admin/Staff - có phân trang
-$router->get('tables/{id}', 'TableController@show'); // Public
-$router->post('tables', 'TableController@store')->middleware('AuthMiddleware'); // Admin/Staff
-$router->put('tables/{id}', 'TableController@update')->middleware('AuthMiddleware'); // Admin/Staff
-$router->put('tables/{id}/status', 'TableController@updateStatus')->middleware('AuthMiddleware'); // Admin/Staff
-$router->delete('tables/{id}', 'TableController@destroy')->middleware('AuthMiddleware'); // Admin only
+$router->get('tables', 'TableController@index');
+$router->get('tables/{id}', 'TableController@show');
+$router->post('tables', 'TableController@store');
+$router->put('tables/{id}', 'TableController@update');
+$router->put('tables/{id}/status', 'TableController@updateStatus');
+$router->delete('tables/{id}', 'TableController@destroy');
+
+// ============================================
+// USER ROUTES (Admin only)
+// ============================================
+$router->get('users', 'UserController@index');
+$router->get('users/{id}', 'UserController@show');
+$router->post('users', 'UserController@store');
+$router->put('users/{id}', 'UserController@update');
+$router->put('users/{id}/status', 'UserController@updateStatus');
+$router->delete('users/{id}', 'UserController@destroy');
