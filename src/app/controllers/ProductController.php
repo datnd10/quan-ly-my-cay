@@ -8,9 +8,18 @@
 
 class ProductController extends Controller {
     private $productService;
+    private $cloudinaryService;
     
     public function __construct() {
         $this->productService = new ProductService();
+        
+        // Khởi tạo Cloudinary service
+        try {
+            $this->cloudinaryService = new CloudinaryService();
+        } catch (Exception $e) {
+            // Nếu không config Cloudinary, để null (fallback về local storage)
+            $this->cloudinaryService = null;
+        }
     }
     
     /**
@@ -79,13 +88,23 @@ class ProductController extends Controller {
         $data = $this->getFormData();
         
         // Xử lý upload nhiều ảnh nếu có
-        if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
-            try {
-                $imageUrls = $this->handleMultipleImageUpload($_FILES['images']);
-                // Lưu dạng string ngăn cách bằng dấu phẩy
-                $data['image_url'] = implode(',', $imageUrls);
-            } catch (Exception $e) {
-                return $this->error($e->getMessage(), 422);
+        if (isset($_FILES['images'])) {
+            // Kiểm tra có file không (cả trường hợp 1 file hoặc nhiều file)
+            $hasFiles = false;
+            if (is_array($_FILES['images']['name'])) {
+                $hasFiles = !empty($_FILES['images']['name'][0]);
+            } else {
+                $hasFiles = !empty($_FILES['images']['name']);
+            }
+            
+            if ($hasFiles) {
+                try {
+                    $imageUrls = $this->handleMultipleImageUpload($_FILES['images']);
+                    // Lưu dạng string ngăn cách bằng dấu phẩy
+                    $data['image_url'] = implode(',', $imageUrls);
+                } catch (Exception $e) {
+                    return $this->error($e->getMessage(), 422);
+                }
             }
         }
         
@@ -123,13 +142,23 @@ class ProductController extends Controller {
         $data = $this->getFormData();
         
         // Xử lý upload nhiều ảnh mới nếu có
-        if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
-            try {
-                $imageUrls = $this->handleMultipleImageUpload($_FILES['images']);
-                // Lưu dạng string ngăn cách bằng dấu phẩy
-                $data['image_url'] = implode(',', $imageUrls);
-            } catch (Exception $e) {
-                return $this->error($e->getMessage(), 422);
+        if (isset($_FILES['images'])) {
+            // Kiểm tra có file không (cả trường hợp 1 file hoặc nhiều file)
+            $hasFiles = false;
+            if (is_array($_FILES['images']['name'])) {
+                $hasFiles = !empty($_FILES['images']['name'][0]);
+            } else {
+                $hasFiles = !empty($_FILES['images']['name']);
+            }
+            
+            if ($hasFiles) {
+                try {
+                    $imageUrls = $this->handleMultipleImageUpload($_FILES['images']);
+                    // Lưu dạng string ngăn cách bằng dấu phẩy
+                    $data['image_url'] = implode(',', $imageUrls);
+                } catch (Exception $e) {
+                    return $this->error($e->getMessage(), 422);
+                }
             }
         }
         
@@ -227,68 +256,6 @@ class ProductController extends Controller {
     }
     
     /**
-     * Upload ảnh sản phẩm
-     * POST /api/products/upload-image
-     * Body: multipart/form-data với field "image"
-     * Admin/Staff only
-     */
-    public function uploadImage() {
-        // Yêu cầu role ADMIN hoặc STAFF
-        $this->requireRole([ROLE_ADMIN, ROLE_STAFF]);
-        
-        // Kiểm tra có file không
-        if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
-            return $this->error('Vui lòng chọn file ảnh', 422);
-        }
-        
-        $file = $_FILES['image'];
-        
-        // Validate file type
-        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-        if (!in_array($file['type'], $allowedTypes)) {
-            return $this->error('Chỉ chấp nhận file ảnh (jpg, png, gif, webp)', 422);
-        }
-        
-        // Validate file size (max 5MB)
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        if ($file['size'] > $maxSize) {
-            return $this->error('Kích thước file không được vượt quá 5MB', 422);
-        }
-        
-        try {
-            // Tạo tên file unique
-            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filename = 'product_' . time() . '_' . uniqid() . '.' . $extension;
-            
-            // Đường dẫn lưu file
-            $uploadDir = __DIR__ . '/../../storage/uploads/';
-            
-            // Tạo thư mục nếu chưa tồn tại
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            
-            $filepath = $uploadDir . $filename;
-            
-            // Di chuyển file
-            if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-                throw new Exception('Không thể lưu file');
-            }
-            
-            // Trả về URL của ảnh
-            $imageUrl = '/uploads/' . $filename;
-            
-            return $this->success([
-                'image_url' => $imageUrl,
-                'filename' => $filename
-            ], 'Upload ảnh thành công');
-            
-        } catch (Exception $e) {
-            return $this->error($e->getMessage(), 500);
-        }
-    }
-    
-    /**
      * Lấy data từ form (multipart/form-data hoặc JSON)
      */
     private function getFormData() {
@@ -305,6 +272,82 @@ class ProductController extends Controller {
      * Xử lý upload nhiều ảnh
      */
     private function handleMultipleImageUpload($files) {
+        // Nếu có Cloudinary, dùng Cloudinary
+        if ($this->cloudinaryService) {
+            return $this->handleCloudinaryUpload($files);
+        }
+        
+        // Fallback: Local storage
+        return $this->handleLocalUpload($files);
+    }
+    
+    /**
+     * Upload lên Cloudinary
+     */
+    private function handleCloudinaryUpload($files) {
+        $uploadedResults = [];
+        
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        $maxSize = 5 * 1024 * 1024; // 5MB
+        
+        // Normalize: nếu upload 1 file, PHP không tự động tạo array
+        if (!is_array($files['name'])) {
+            $files = [
+                'name' => [$files['name']],
+                'type' => [$files['type']],
+                'tmp_name' => [$files['tmp_name']],
+                'error' => [$files['error']],
+                'size' => [$files['size']]
+            ];
+        }
+        
+        $fileCount = count($files['name']);
+        $tempFiles = [];
+        
+        for ($i = 0; $i < $fileCount; $i++) {
+            // Bỏ qua file lỗi
+            if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+                continue;
+            }
+            
+            // Validate type
+            if (!in_array($files['type'][$i], $allowedTypes)) {
+                // Xóa các ảnh đã upload trước đó
+                foreach ($uploadedResults as $result) {
+                    $this->cloudinaryService->deleteImage($result['public_id']);
+                }
+                throw new Exception('Chỉ chấp nhận file ảnh (jpg, png, gif, webp)');
+            }
+            
+            // Validate size
+            if ($files['size'][$i] > $maxSize) {
+                // Xóa các ảnh đã upload trước đó
+                foreach ($uploadedResults as $result) {
+                    $this->cloudinaryService->deleteImage($result['public_id']);
+                }
+                throw new Exception('Kích thước file không được vượt quá 5MB');
+            }
+            
+            $tempFiles[] = $files['tmp_name'][$i];
+        }
+        
+        // Upload lên Cloudinary
+        try {
+            $uploadedResults = $this->cloudinaryService->uploadMultipleImages($tempFiles, 'products');
+            
+            // Trả về mảng URLs
+            return array_column($uploadedResults, 'url');
+            
+        } catch (Exception $e) {
+            throw new Exception('Upload ảnh thất bại: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Upload local (fallback)
+     */
+    private function handleLocalUpload($files) {
         $uploadedUrls = [];
         $uploadDir = __DIR__ . '/../../storage/uploads/';
         
@@ -318,7 +361,6 @@ class ProductController extends Controller {
         $maxSize = 5 * 1024 * 1024; // 5MB
         
         // Normalize: nếu upload 1 file, PHP không tự động tạo array
-        // Chuyển thành array format để xử lý thống nhất
         if (!is_array($files['name'])) {
             $files = [
                 'name' => [$files['name']],
@@ -377,46 +419,7 @@ class ProductController extends Controller {
     }
     
     /**
-     * Xử lý upload ảnh
-     */
-    private function handleImageUpload($file) {
-        // Validate file type
-        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-        if (!in_array($file['type'], $allowedTypes)) {
-            throw new Exception('Chỉ chấp nhận file ảnh (jpg, png, gif, webp)');
-        }
-        
-        // Validate file size (max 5MB)
-        $maxSize = 5 * 1024 * 1024; // 5MB
-        if ($file['size'] > $maxSize) {
-            throw new Exception('Kích thước file không được vượt quá 5MB');
-        }
-        
-        // Tạo tên file unique
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = 'product_' . time() . '_' . uniqid() . '.' . $extension;
-        
-        // Đường dẫn lưu file
-        $uploadDir = __DIR__ . '/../../storage/uploads/';
-        
-        // Tạo thư mục nếu chưa tồn tại
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-        
-        $filepath = $uploadDir . $filename;
-        
-        // Di chuyển file
-        if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-            throw new Exception('Không thể lưu file');
-        }
-        
-        // Trả về URL của ảnh
-        return '/uploads/' . $filename;
-    }
-    
-    /**
-     * Xóa ảnh đã upload (khi có lỗi)
+     * Xóa ảnh local (khi có lỗi)
      */
     private function deleteUploadedImage($imageUrl) {
         $filename = basename($imageUrl);
@@ -433,7 +436,18 @@ class ProductController extends Controller {
     private function deleteMultipleImages($imageUrlString) {
         $imageUrls = explode(',', $imageUrlString);
         foreach ($imageUrls as $url) {
-            $this->deleteUploadedImage(trim($url));
+            $url = trim($url);
+            
+            // Nếu là Cloudinary URL
+            if (strpos($url, 'cloudinary.com') !== false && $this->cloudinaryService) {
+                $publicId = $this->cloudinaryService->getPublicIdFromUrl($url);
+                if ($publicId) {
+                    $this->cloudinaryService->deleteImage($publicId);
+                }
+            } else {
+                // Local file
+                $this->deleteUploadedImage($url);
+            }
         }
     }
 }

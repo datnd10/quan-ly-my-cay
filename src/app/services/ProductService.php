@@ -152,14 +152,26 @@ class ProductService {
      * Xóa 1 file ảnh
      */
     private function deleteSingleImage($imageUrl) {
-        // Lấy tên file từ URL
-        // Ví dụ: /uploads/products/abc.jpg -> abc.jpg
-        $filename = basename($imageUrl);
-        $filepath = __DIR__ . '/../../storage/uploads/' . $filename;
-        
-        // Xóa file nếu tồn tại
-        if (file_exists($filepath)) {
-            @unlink($filepath);
+        // Kiểm tra xem là Cloudinary URL hay local
+        if (strpos($imageUrl, 'cloudinary.com') !== false) {
+            // Cloudinary URL - dùng CloudinaryService để xóa
+            try {
+                $cloudinaryService = new CloudinaryService();
+                $publicId = $cloudinaryService->getPublicIdFromUrl($imageUrl);
+                if ($publicId) {
+                    $cloudinaryService->deleteImage($publicId);
+                }
+            } catch (Exception $e) {
+                error_log('Failed to delete Cloudinary image: ' . $e->getMessage());
+            }
+        } else {
+            // Local file - xóa từ storage/uploads
+            $filename = basename($imageUrl);
+            $filepath = __DIR__ . '/../../storage/uploads/' . $filename;
+            
+            if (file_exists($filepath)) {
+                @unlink($filepath);
+            }
         }
     }
     

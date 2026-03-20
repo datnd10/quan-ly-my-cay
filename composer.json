@@ -3,7 +3,8 @@
     "description": "Spicy Noodle Management API",
     "type": "project",
     "require": {
-        "php": ">=8.0"
+        "php": ">=8.0",
+        "cloudinary/cloudinary_php": "^2.0"
     },
     "require-dev": {
         "zircote/swagger-php": "^4.0"

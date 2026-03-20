@@ -38,6 +38,10 @@ if (strpos($uri, '/uploads/') === 0) {
     $filename = basename($uri);
     $filepath = __DIR__ . '/../storage/uploads/' . $filename;
     
+    // Debug: log filepath
+    error_log("Trying to serve file: " . $filepath);
+    error_log("File exists: " . (file_exists($filepath) ? 'yes' : 'no'));
+    
     if (file_exists($filepath)) {
         // Xác định MIME type
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -51,7 +55,12 @@ if (strpos($uri, '/uploads/') === 0) {
         exit();
     } else {
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'File not found']);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'File not found',
+            'filepath' => $filepath,
+            'filename' => $filename
+        ]);
         exit();
     }
 }
