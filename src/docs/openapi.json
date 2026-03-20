@@ -3,7 +3,7 @@
   "info": {
     "title": "Spicy Noodle Management API",
     "version": "1.0.0",
-    "description": "REST API cho hệ thống quản lý nhà hàng mỳ cay. Docs được generate từ annotations trong code."
+    "description": "REST API cho hệ thống quản lý nhà hàng mỳ cay"
   },
   "servers": [
     {
@@ -35,6 +35,7 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Đăng nhập",
+        "description": "Đăng nhập và nhận JWT token",
         "requestBody": {
           "required": true,
           "content": {
@@ -78,6 +79,7 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Đăng ký khách hàng",
+        "description": "Khách hàng tự đăng ký tài khoản (username = phone)",
         "requestBody": {
           "required": true,
           "content": {
@@ -86,10 +88,10 @@
                 "type": "object",
                 "required": ["phone", "password", "name"],
                 "properties": {
-                  "phone": {"type": "string"},
-                  "password": {"type": "string"},
-                  "name": {"type": "string"},
-                  "email": {"type": "string"}
+                  "phone": {"type": "string", "example": "0987654321"},
+                  "password": {"type": "string", "example": "Pass@123"},
+                  "name": {"type": "string", "example": "Nguyễn Văn A"},
+                  "email": {"type": "string", "example": "email@example.com"}
                 }
               }
             }
@@ -104,7 +106,68 @@
       "get": {
         "tags": ["Auth"],
         "summary": "Thông tin user hiện tại",
+        "description": "Lấy thông tin user đang đăng nhập",
         "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Đổi mật khẩu",
+        "description": "User đổi mật khẩu của chính mình",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["old_password", "new_password"],
+                "properties": {
+                  "old_password": {"type": "string"},
+                  "new_password": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Đổi mật khẩu thành công"}
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Quên mật khẩu",
+        "description": "Gửi mật khẩu mới qua email",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": {"type": "string", "example": "user@example.com"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Email đã được gửi"}
+        }
+      }
+    },
+    "/password-requirements": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Yêu cầu mật khẩu",
+        "description": "Lấy các yêu cầu về mật khẩu mạnh",
         "responses": {
           "200": {"description": "Success"}
         }
@@ -114,6 +177,7 @@
       "get": {
         "tags": ["Users"],
         "summary": "Danh sách users",
+        "description": "Lấy danh sách users (Admin only)",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "page", "in": "query", "schema": {"type": "integer"}},
@@ -124,18 +188,285 @@
         "responses": {
           "200": {"description": "Success"}
         }
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Tạo user mới",
+        "description": "Admin tạo tài khoản Staff/Admin",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password", "role"],
+                "properties": {
+                  "username": {"type": "string"},
+                  "password": {"type": "string"},
+                  "role": {"type": "string", "enum": ["ADMIN", "STAFF"]}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Tạo user thành công"}
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Chi tiết user",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Cập nhật user",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {"type": "string"},
+                  "password": {"type": "string"},
+                  "role": {"type": "string"},
+                  "status": {"type": "integer"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật thành công"}
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Xóa user",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Xóa thành công"}
+        }
       }
     },
     "/customers": {
       "get": {
         "tags": ["Customers"],
         "summary": "Danh sách khách hàng",
+        "description": "Lấy danh sách khách hàng (Admin/Staff)",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
           {"name": "name", "in": "query", "schema": {"type": "string"}},
           {"name": "phone", "in": "query", "schema": {"type": "string"}},
           {"name": "email", "in": "query", "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Tạo khách hàng mới",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["phone", "password", "name"],
+                "properties": {
+                  "phone": {"type": "string"},
+                  "password": {"type": "string"},
+                  "name": {"type": "string"},
+                  "email": {"type": "string"},
+                  "points": {"type": "integer"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Tạo khách hàng thành công"}
+        }
+      }
+    },
+    "/customers/{id}": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Chi tiết khách hàng",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Cập nhật khách hàng",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "phone": {"type": "string"},
+                  "email": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật thành công"}
+        }
+      },
+      "delete": {
+        "tags": ["Customers"],
+        "summary": "Vô hiệu hóa khách hàng",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Vô hiệu hóa thành công"}
+        }
+      }
+    },
+    "/customers/{id}/status": {
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Cập nhật trạng thái khách hàng",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {"type": "integer", "enum": [0, 1]}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật trạng thái thành công"}
+        }
+      }
+    },
+    "/customers/{id}/points": {
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Cập nhật điểm tích lũy",
+        "description": "Cộng/trừ/set điểm cho khách hàng",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action", "points"],
+                "properties": {
+                  "action": {"type": "string", "enum": ["add", "subtract", "set"]},
+                  "points": {"type": "integer"},
+                  "description": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật điểm thành công"}
+        }
+      }
+    },
+    "/customers/{id}/points/history": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Lịch sử điểm của khách hàng",
+        "description": "Admin/Staff xem lịch sử điểm",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}},
+          {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      }
+    },
+    "/customers/profile": {
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Cập nhật profile của chính mình",
+        "description": "Customer tự cập nhật thông tin",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "email": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật thành công"}
+        }
+      }
+    },
+    "/customers/my-points/history": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Lịch sử điểm của tôi",
+        "description": "Customer xem lịch sử điểm của mình",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}}
         ],
         "responses": {
           "200": {"description": "Success"}
@@ -145,13 +476,98 @@
     "/categories": {
       "get": {
         "tags": ["Categories"],
-        "summary": "Danh sách danh mục",
+        "summary": "Danh sách danh mục (có phân trang)",
+        "description": "Public API - không cần auth",
         "parameters": [
           {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
           {"name": "search", "in": "query", "schema": {"type": "string"}}
         ],
         "responses": {
           "200": {"description": "Success"}
+        }
+      },
+      "post": {
+        "tags": ["Categories"],
+        "summary": "Tạo danh mục mới",
+        "description": "Admin/Staff tạo danh mục",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {"type": "string", "example": "Mỳ cay"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Tạo danh mục thành công"}
+        }
+      }
+    },
+    "/categories/all": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Lấy tất cả danh mục",
+        "description": "Public API - lấy tất cả không phân trang",
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      }
+    },
+    "/categories/{id}": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Chi tiết danh mục",
+        "description": "Public API",
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "put": {
+        "tags": ["Categories"],
+        "summary": "Cập nhật danh mục",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật thành công"}
+        }
+      },
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "Xóa danh mục",
+        "description": "Admin only - Không cho xóa nếu đang có sản phẩm",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Xóa thành công"}
         }
       }
     }

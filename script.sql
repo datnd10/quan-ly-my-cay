@@ -73,51 +73,24 @@ CREATE TABLE products (
     price DECIMAL(12,2) NOT NULL,
     description TEXT,
     image_url VARCHAR(255),
-    status TINYINT DEFAULT 1,
+    stock_quantity INT DEFAULT 0 COMMENT 'Số lượng tồn kho',
+    min_stock INT DEFAULT 0 COMMENT 'Cảnh báo khi < min_stock',
+    status TINYINT DEFAULT 1 COMMENT '1=available, 0=unavailable',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
 -- =========================
--- BRANCH
--- =========================
-CREATE TABLE branches (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    address VARCHAR(255),
-    phone VARCHAR(20),
-    status TINYINT DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- =========================
--- INVENTORY
--- =========================
-CREATE TABLE inventories (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    product_id BIGINT,
-    branch_id BIGINT,
-    stock_quantity INT DEFAULT 0,
-    min_stock INT DEFAULT 0,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE,
-    UNIQUE(product_id, branch_id)
-);
-
--- =========================
--- TABLES
+-- TABLES (BÀN ĂN)
 -- =========================
 CREATE TABLE tables (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    branch_id BIGINT,
-    table_number VARCHAR(20) NOT NULL,
-    capacity INT,
-    status VARCHAR(20) DEFAULT 'AVAILABLE',
+    table_number VARCHAR(20) NOT NULL UNIQUE,
+    capacity INT DEFAULT 4 COMMENT 'Số chỗ ngồi',
+    status VARCHAR(20) DEFAULT 'AVAILABLE' COMMENT 'AVAILABLE, OCCUPIED, RESERVED, MAINTENANCE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE,
-    UNIQUE(branch_id, table_number)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- =========================
@@ -127,7 +100,6 @@ CREATE TABLE orders (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     customer_id BIGINT,
     table_id BIGINT,
-    branch_id BIGINT,
     status VARCHAR(20) DEFAULT 'PENDING',
     total_amount DECIMAL(12,2) DEFAULT 0,
     discount_amount DECIMAL(12,2) DEFAULT 0,
@@ -136,8 +108,7 @@ CREATE TABLE orders (
     completed_at TIMESTAMP NULL,
     paid_at TIMESTAMP NULL,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
-    FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE SET NULL,
-    FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL
+    FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE SET NULL
 );
 
 -- =========================
@@ -234,7 +205,6 @@ CREATE TABLE reservations (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     customer_id BIGINT,
     table_id BIGINT,
-    branch_id BIGINT,
     reservation_time DATETIME NOT NULL,
     guest_count INT,
     status VARCHAR(20) DEFAULT 'PENDING',
@@ -242,8 +212,7 @@ CREATE TABLE reservations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
-    FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE SET NULL,
-    FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE
+    FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE SET NULL
 );
 
 -- =========================
@@ -252,7 +221,6 @@ CREATE TABLE reservations (
 -- Orders indexes
 CREATE INDEX idx_order_customer ON orders(customer_id);
 CREATE INDEX idx_order_table ON orders(table_id);
-CREATE INDEX idx_order_branch ON orders(branch_id);
 CREATE INDEX idx_order_status ON orders(status);
 CREATE INDEX idx_order_created_at ON orders(created_at);
 CREATE INDEX idx_order_completed_at ON orders(completed_at);
@@ -261,10 +229,6 @@ CREATE INDEX idx_order_paid_at ON orders(paid_at);
 -- Order status history indexes
 CREATE INDEX idx_order_status_history_order ON order_status_history(order_id);
 CREATE INDEX idx_order_status_history_created ON order_status_history(created_at);
-
--- Inventory indexes
-CREATE INDEX idx_inventory_product ON inventories(product_id);
-CREATE INDEX idx_inventory_branch ON inventories(branch_id);
 
 -- Product indexes
 CREATE INDEX idx_product_category ON products(category_id);
