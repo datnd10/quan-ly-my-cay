@@ -191,7 +191,7 @@ class AuthService {
     private function base64UrlEncode($data) {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
-}
+
 
     /**
      * Đổi mật khẩu (user đã đăng nhập)
@@ -283,3 +283,4 @@ class AuthService {
         
         return $masked . '@' . $domain;
     }
+}
