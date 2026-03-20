@@ -9,10 +9,12 @@
 class CustomerService {
     private $customerRepo;
     private $userRepo;
+    private $pointTransactionRepo;
     
     public function __construct() {
         $this->customerRepo = new CustomerRepository();
         $this->userRepo = new UserRepository();
+        $this->pointTransactionRepo = new PointTransactionRepository();
     }
     
     /**
@@ -166,7 +168,7 @@ class CustomerService {
     /**
      * Cập nhật điểm tích lũy
      */
-    public function updatePoints($id, $points, $action = 'add') {
+    public function updatePoints($id, $points, $action = 'add', $description = null, $createdBy = null) {
         $customer = $this->customerRepo->findById($id);
         
         if (!$customer) {
@@ -177,24 +179,75 @@ class CustomerService {
             throw new Exception('Số điểm không hợp lệ');
         }
         
+        $pointsChange = 0;
+        $type = POINT_TYPE_ADJUST;
+        
         if ($action === 'add') {
             // Cộng điểm
-            $this->customerRepo->updatePoints($id, $points);
+            $pointsChange = $points;
+            $type = POINT_TYPE_EARN;
+            $description = $description ?: "Cộng {$points} điểm";
         } elseif ($action === 'subtract') {
             // Trừ điểm
             if ($customer['points'] < $points) {
                 throw new Exception('Số điểm không đủ');
             }
-            $this->customerRepo->updatePoints($id, -$points);
+            $pointsChange = -$points;
+            $type = POINT_TYPE_REDEEM;
+            $description = $description ?: "Trừ {$points} điểm";
         } elseif ($action === 'set') {
             // Set điểm cụ thể
-            $newPoints = $points - $customer['points'];
-            $this->customerRepo->updatePoints($id, $newPoints);
+            $pointsChange = $points - $customer['points'];
+            $type = POINT_TYPE_ADJUST;
+            $description = $description ?: "Điều chỉnh điểm thành {$points}";
         } else {
             throw new Exception('Action không hợp lệ');
         }
         
-        return $this->getCustomerById($id);
+        $db = Database::getInstance();
+        
+        try {
+            $db->beginTransaction();
+            
+            // Cập nhật điểm
+            $this->customerRepo->updatePoints($id, $pointsChange);
+            
+            // Lấy số điểm sau khi cập nhật
+            $updatedCustomer = $this->customerRepo->findById($id);
+            $balanceAfter = $updatedCustomer['points'];
+            
+            // Tạo transaction log
+            $this->pointTransactionRepo->create([
+                'customer_id' => $id,
+                'points' => $pointsChange,
+                'type' => $type,
+                'description' => $description,
+                'reference_type' => 'manual',
+                'balance_after' => $balanceAfter,
+                'created_by' => $createdBy
+            ]);
+            
+            $db->commit();
+            
+            return $this->getCustomerById($id);
+            
+        } catch (Exception $e) {
+            $db->rollback();
+            throw $e;
+        }
+    }
+    
+    /**
+     * Lấy lịch sử điểm của customer
+     */
+    public function getPointHistory($customerId, $page = 1, $perPage = 20) {
+        $total = $this->pointTransactionRepo->countByCustomerId($customerId);
+        $transactions = $this->pointTransactionRepo->getByCustomerId($customerId, $page, $perPage);
+        
+        return [
+            'transactions' => $transactions,
+            'total' => $total
+        ];
     }
     
     /**

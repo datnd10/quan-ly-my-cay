@@ -85,10 +85,16 @@ define('VOUCHER_STATUS_INACTIVE', 0); // Voucher hết hạn/vô hiệu
 // ============================================
 // LOYALTY - Loại giao dịch điểm thưởng
 // ============================================
-define('LOYALTY_TYPE_EARN', 'EARN');         // Tích điểm (mua hàng)
-define('LOYALTY_TYPE_REDEEM', 'REDEEM');     // Đổi điểm (dùng điểm)
-define('LOYALTY_TYPE_EXPIRED', 'EXPIRED');   // Điểm hết hạn
-define('LOYALTY_TYPE_ADJUSTED', 'ADJUSTED'); // Điều chỉnh thủ công (admin)
+define('POINT_TYPE_EARN', 'EARN');         // Tích điểm (từ đơn hàng)
+define('POINT_TYPE_REDEEM', 'REDEEM');     // Đổi điểm (dùng điểm giảm giá)
+define('POINT_TYPE_ADJUST', 'ADJUST');     // Điều chỉnh thủ công (admin)
+define('POINT_TYPE_REFUND', 'REFUND');     // Hoàn điểm (hủy đơn)
+define('POINT_TYPE_EXPIRED', 'EXPIRED');   // Điểm hết hạn
+
+define('LOYALTY_TYPE_EARN', 'EARN');         // Tích điểm (mua hàng) - deprecated
+define('LOYALTY_TYPE_REDEEM', 'REDEEM');     // Đổi điểm (dùng điểm) - deprecated
+define('LOYALTY_TYPE_EXPIRED', 'EXPIRED');   // Điểm hết hạn - deprecated
+define('LOYALTY_TYPE_ADJUSTED', 'ADJUSTED'); // Điều chỉnh thủ công (admin) - deprecated
 
 // ============================================
 // BRANCH STATUS - Trạng thái chi nhánh

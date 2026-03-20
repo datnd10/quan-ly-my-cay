@@ -39,6 +39,25 @@ CREATE TABLE customers (
 );
 
 -- =========================
+-- POINT TRANSACTIONS (LỊCH SỬ ĐIỂM)
+-- =========================
+CREATE TABLE point_transactions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    customer_id BIGINT NOT NULL,
+    points INT NOT NULL COMMENT 'Số điểm (+ là cộng, - là trừ)',
+    type VARCHAR(20) NOT NULL COMMENT 'EARN, REDEEM, ADJUST, REFUND',
+    description VARCHAR(255) COMMENT 'Mô tả giao dịch',
+    reference_type VARCHAR(50) COMMENT 'order, manual, voucher',
+    reference_id BIGINT COMMENT 'ID của order/voucher nếu có',
+    balance_after INT NOT NULL COMMENT 'Số điểm sau giao dịch',
+    created_by BIGINT COMMENT 'User ID của người tạo (nếu là admin/staff)',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_customer_created (customer_id, created_at DESC)
+);
+
+-- =========================
 -- CATEGORY & PRODUCT
 -- =========================
 CREATE TABLE categories (

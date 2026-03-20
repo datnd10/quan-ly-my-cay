@@ -153,10 +153,14 @@ $router->post('customers', 'CustomerController@store');
 $router->put('customers/{id}', 'CustomerController@update');
 $router->put('customers/{id}/status', 'CustomerController@updateStatus');
 $router->put('customers/{id}/points', 'CustomerController@updatePoints');
+$router->get('customers/{id}/points/history', 'CustomerController@pointHistory');
 $router->delete('customers/{id}', 'CustomerController@destroy');
 
 // Customer tự cập nhật profile
 $router->put('customers/profile', 'CustomerController@updateProfile');
+
+// Customer xem lịch sử điểm của mình
+$router->get('customers/my-points/history', 'CustomerController@myPointHistory');
 
 // ============================================
 // CATEGORY ROUTES

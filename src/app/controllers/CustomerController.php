@@ -132,11 +132,11 @@ class CustomerController extends Controller {
     /**
      * Cập nhật điểm tích lũy
      * PUT /api/customers/{id}/points
-     * Body: { "points": 100, "action": "add" } // action: add, subtract, set
+     * Body: { "points": 100, "action": "add", "description": "Mua hàng" }
      */
     public function updatePoints($id) {
         // Yêu cầu role ADMIN hoặc STAFF
-        $this->requireRole([ROLE_ADMIN, ROLE_STAFF]);
+        $user = $this->requireRole([ROLE_ADMIN, ROLE_STAFF]);
         
         $data = $this->getBody();
         
@@ -145,13 +145,51 @@ class CustomerController extends Controller {
         }
         
         $action = $data['action'] ?? 'add';
+        $description = $data['description'] ?? null;
         
         try {
-            $customer = $this->customerService->updatePoints($id, $data['points'], $action);
+            $customer = $this->customerService->updatePoints(
+                $id, 
+                $data['points'], 
+                $action, 
+                $description,
+                $user['user_id']
+            );
             return $this->success($customer, 'Cập nhật điểm thành công');
             
         } catch (Exception $e) {
             return $this->error($e->getMessage(), 400);
+        }
+    }
+    
+    /**
+     * Lấy lịch sử điểm của customer
+     * GET /api/customers/{id}/points/history?page=1&per_page=20
+     */
+    public function pointHistory($id) {
+        // Yêu cầu role ADMIN, STAFF hoặc chính customer đó
+        try {
+            $user = $this->auth();
+            
+            // Kiểm tra quyền: Admin/Staff hoặc chính customer đó
+            if ($user['role'] !== ROLE_ADMIN && $user['role'] !== ROLE_STAFF) {
+                // Nếu là customer, chỉ được xem lịch sử của mình
+                $customerRepo = new CustomerRepository();
+                $customer = $customerRepo->findById($id);
+                
+                if (!$customer || $customer['user_id'] != $user['user_id']) {
+                    return $this->error('Bạn không có quyền xem lịch sử này', 403);
+                }
+            }
+            
+            $page = max(1, (int)$this->getQuery('page', 1));
+            $perPage = min(100, max(1, (int)$this->getQuery('per_page', 20)));
+            
+            $result = $this->customerService->getPointHistory($id, $page, $perPage);
+            return $this->paginate($result['transactions'], $result['total'], $page, $perPage);
+            
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 500);
         }
     }
     
@@ -207,6 +245,40 @@ class CustomerController extends Controller {
             $statusCode = isset($e->errors) ? 422 : 500;
             $errors = isset($e->errors) ? $e->errors : null;
             return $this->error($e->getMessage(), $statusCode, $errors);
+        }
+    }
+}
+
+    /**
+     * Customer xem lịch sử điểm của chính mình
+     * GET /api/customers/my-points/history?page=1&per_page=20
+     */
+    public function myPointHistory() {
+        // Lấy thông tin user từ token
+        $user = $this->auth();
+        
+        // Chỉ customer mới được dùng API này
+        if ($user['role'] !== ROLE_CUSTOMER) {
+            return $this->error('API này chỉ dành cho khách hàng', 403);
+        }
+        
+        try {
+            // Tìm customer profile theo user_id
+            $customerRepo = new CustomerRepository();
+            $customer = $customerRepo->findByUserId($user['user_id']);
+            
+            if (!$customer) {
+                return $this->error('Không tìm thấy thông tin khách hàng', 404);
+            }
+            
+            $page = max(1, (int)$this->getQuery('page', 1));
+            $perPage = min(100, max(1, (int)$this->getQuery('per_page', 20)));
+            
+            $result = $this->customerService->getPointHistory($customer['id'], $page, $perPage);
+            return $this->paginate($result['transactions'], $result['total'], $page, $perPage);
+            
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 500);
         }
     }
 }
