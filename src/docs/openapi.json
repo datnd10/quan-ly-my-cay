@@ -29,7 +29,8 @@
     {"name": "Users", "description": "User management (Admin)"},
     {"name": "Customers", "description": "Customer management"},
     {"name": "Categories", "description": "Category management"},
-    {"name": "Products", "description": "Product management"}
+    {"name": "Products", "description": "Product management"},
+    {"name": "Tables", "description": "Table management"}
   ],
   "paths": {
     "/auth/login": {
@@ -714,6 +715,152 @@
         },
         "responses": {
           "200": {"description": "Cập nhật tồn kho thành công"}
+        }
+      }
+    },
+    "/tables": {
+      "get": {
+        "tags": ["Tables"],
+        "summary": "Danh sách bàn (có phân trang)",
+        "description": "Admin/Staff xem danh sách bàn",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["AVAILABLE", "OCCUPIED", "RESERVED", "MAINTENANCE"]}},
+          {"name": "min_capacity", "in": "query", "schema": {"type": "integer"}},
+          {"name": "search", "in": "query", "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "post": {
+        "tags": ["Tables"],
+        "summary": "Tạo bàn mới",
+        "description": "Admin/Staff tạo bàn",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["table_number"],
+                "properties": {
+                  "table_number": {"type": "string", "example": "A01"},
+                  "capacity": {"type": "integer", "example": 4, "default": 4},
+                  "status": {"type": "string", "enum": ["AVAILABLE", "OCCUPIED", "RESERVED", "MAINTENANCE"], "default": "AVAILABLE"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Tạo bàn thành công"}
+        }
+      }
+    },
+    "/tables/all": {
+      "get": {
+        "tags": ["Tables"],
+        "summary": "Tất cả bàn (không phân trang)",
+        "description": "Public API - Lấy tất cả bàn",
+        "parameters": [
+          {"name": "status", "in": "query", "schema": {"type": "string"}},
+          {"name": "min_capacity", "in": "query", "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      }
+    },
+    "/tables/available": {
+      "get": {
+        "tags": ["Tables"],
+        "summary": "Bàn trống",
+        "description": "Public API - Lấy danh sách bàn trống (status=AVAILABLE)",
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      }
+    },
+    "/tables/{id}": {
+      "get": {
+        "tags": ["Tables"],
+        "summary": "Chi tiết bàn",
+        "description": "Public API",
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "put": {
+        "tags": ["Tables"],
+        "summary": "Cập nhật bàn",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "table_number": {"type": "string"},
+                  "capacity": {"type": "integer"},
+                  "status": {"type": "string", "enum": ["AVAILABLE", "OCCUPIED", "RESERVED", "MAINTENANCE"]}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật thành công"}
+        }
+      },
+      "delete": {
+        "tags": ["Tables"],
+        "summary": "Xóa bàn",
+        "description": "Admin only",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Xóa thành công"}
+        }
+      }
+    },
+    "/tables/{id}/status": {
+      "put": {
+        "tags": ["Tables"],
+        "summary": "Cập nhật trạng thái bàn",
+        "description": "Admin/Staff cập nhật trạng thái bàn",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {"type": "string", "enum": ["AVAILABLE", "OCCUPIED", "RESERVED", "MAINTENANCE"], "example": "OCCUPIED"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật trạng thái thành công"}
         }
       }
     }

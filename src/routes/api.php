@@ -182,3 +182,15 @@ $router->post('products', 'ProductController@store')->middleware('AuthMiddleware
 $router->put('products/{id}', 'ProductController@update')->middleware('AuthMiddleware'); // Admin/Staff
 $router->put('products/{id}/stock', 'ProductController@updateStock')->middleware('AuthMiddleware'); // Admin/Staff
 $router->delete('products/{id}', 'ProductController@destroy')->middleware('AuthMiddleware'); // Admin only
+
+// ============================================
+// TABLE ROUTES
+// ============================================
+$router->get('tables/available', 'TableController@available'); // Public - bàn trống
+$router->get('tables/all', 'TableController@all'); // Public - tất cả bàn (không phân trang)
+$router->get('tables', 'TableController@index')->middleware('AuthMiddleware'); // Admin/Staff - có phân trang
+$router->get('tables/{id}', 'TableController@show'); // Public
+$router->post('tables', 'TableController@store')->middleware('AuthMiddleware'); // Admin/Staff
+$router->put('tables/{id}', 'TableController@update')->middleware('AuthMiddleware'); // Admin/Staff
+$router->put('tables/{id}/status', 'TableController@updateStatus')->middleware('AuthMiddleware'); // Admin/Staff
+$router->delete('tables/{id}', 'TableController@destroy')->middleware('AuthMiddleware'); // Admin only
