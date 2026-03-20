@@ -595,11 +595,31 @@
       "post": {
         "tags": ["Products"],
         "summary": "Tạo sản phẩm mới",
-        "description": "Admin/Staff tạo sản phẩm",
+        "description": "Admin/Staff tạo sản phẩm - Hỗ trợ upload nhiều ảnh",
         "security": [{"bearerAuth": []}],
         "requestBody": {
           "required": true,
           "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "price"],
+                "properties": {
+                  "category_id": {"type": "integer", "example": 1},
+                  "name": {"type": "string", "example": "Mỳ cay level 1"},
+                  "price": {"type": "number", "example": 50000},
+                  "description": {"type": "string", "example": "Mỳ cay độ 1"},
+                  "stock_quantity": {"type": "integer", "example": 100},
+                  "min_stock": {"type": "integer", "example": 10},
+                  "status": {"type": "integer", "enum": [0, 1], "default": 1},
+                  "images": {
+                    "type": "array",
+                    "items": {"type": "string", "format": "binary"},
+                    "description": "Upload nhiều ảnh (jpg, png, gif, webp, max 5MB/file)"
+                  }
+                }
+              }
+            },
             "application/json": {
               "schema": {
                 "type": "object",
@@ -609,7 +629,7 @@
                   "name": {"type": "string", "example": "Mỳ cay level 1"},
                   "price": {"type": "number", "example": 50000},
                   "description": {"type": "string"},
-                  "image_url": {"type": "string"},
+                  "image_url": {"type": "string", "description": "Hoặc dùng URL có sẵn"},
                   "stock_quantity": {"type": "integer", "example": 100},
                   "min_stock": {"type": "integer", "example": 10},
                   "status": {"type": "integer", "enum": [0, 1], "default": 1}
@@ -649,6 +669,7 @@
       "put": {
         "tags": ["Products"],
         "summary": "Cập nhật sản phẩm",
+        "description": "Admin/Staff cập nhật - Hỗ trợ upload nhiều ảnh mới",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
@@ -656,6 +677,25 @@
         "requestBody": {
           "required": true,
           "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category_id": {"type": "integer"},
+                  "name": {"type": "string"},
+                  "price": {"type": "number"},
+                  "description": {"type": "string"},
+                  "stock_quantity": {"type": "integer"},
+                  "min_stock": {"type": "integer"},
+                  "status": {"type": "integer", "enum": [0, 1]},
+                  "images": {
+                    "type": "array",
+                    "items": {"type": "string", "format": "binary"},
+                    "description": "Upload ảnh mới (sẽ xóa ảnh cũ)"
+                  }
+                }
+              }
+            },
             "application/json": {
               "schema": {
                 "type": "object",
