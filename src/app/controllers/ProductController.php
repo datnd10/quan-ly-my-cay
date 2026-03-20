@@ -170,11 +170,30 @@ class ProductController extends Controller {
         
         // Xử lý upload nhiều ảnh mới nếu có
         // Hỗ trợ cả 'images' và 'images[]' (tùy frontend gửi)
+        
+        // Debug: Log toàn bộ $_FILES
+        error_log('All FILES: ' . print_r($_FILES, true));
+        
         $imageFiles = null;
         if (isset($_FILES['images'])) {
             $imageFiles = $_FILES['images'];
-        } elseif (isset($_FILES['images[]'])) {
-            $imageFiles = $_FILES['images[]'];
+            error_log('Found images field');
+        } elseif (isset($_FILES['images_'])) {
+            // PHP tự động convert images[] thành images_
+            $imageFiles = $_FILES['images_'];
+            error_log('Found images_ field (from images[])');
+        }
+        
+        // Thử tìm bất kỳ field nào có chứa 'image'
+        if (!$imageFiles) {
+            foreach ($_FILES as $key => $value) {
+                error_log("FILE key found: $key");
+                if (strpos($key, 'image') !== false) {
+                    $imageFiles = $value;
+                    error_log("Using file field: $key");
+                    break;
+                }
+            }
         }
         
         if ($imageFiles) {
