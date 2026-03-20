@@ -28,7 +28,8 @@
     {"name": "Auth", "description": "Authentication"},
     {"name": "Users", "description": "User management (Admin)"},
     {"name": "Customers", "description": "Customer management"},
-    {"name": "Categories", "description": "Category management"}
+    {"name": "Categories", "description": "Category management"},
+    {"name": "Products", "description": "Product management"}
   ],
   "paths": {
     "/auth/login": {
@@ -568,6 +569,151 @@
         ],
         "responses": {
           "200": {"description": "Xóa thành công"}
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Danh sách sản phẩm",
+        "description": "Public API - Lấy danh sách sản phẩm với filter",
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "category_id", "in": "query", "schema": {"type": "integer"}, "description": "Lọc theo danh mục"},
+          {"name": "status", "in": "query", "schema": {"type": "integer", "enum": [0, 1]}, "description": "Lọc theo trạng thái"},
+          {"name": "search", "in": "query", "schema": {"type": "string"}, "description": "Tìm kiếm theo tên"},
+          {"name": "low_stock", "in": "query", "schema": {"type": "integer", "enum": [0, 1]}, "description": "Lọc sản phẩm sắp hết hàng"}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Tạo sản phẩm mới",
+        "description": "Admin/Staff tạo sản phẩm",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "price"],
+                "properties": {
+                  "category_id": {"type": "integer", "example": 1},
+                  "name": {"type": "string", "example": "Mỳ cay level 1"},
+                  "price": {"type": "number", "example": 50000},
+                  "description": {"type": "string"},
+                  "image_url": {"type": "string"},
+                  "stock_quantity": {"type": "integer", "example": 100},
+                  "min_stock": {"type": "integer", "example": 10},
+                  "status": {"type": "integer", "enum": [0, 1], "default": 1}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Tạo sản phẩm thành công"}
+        }
+      }
+    },
+    "/products/low-stock": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Sản phẩm sắp hết hàng",
+        "description": "Lấy danh sách sản phẩm có stock <= min_stock (Admin/Staff)",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Chi tiết sản phẩm",
+        "description": "Public API",
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "Cập nhật sản phẩm",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category_id": {"type": "integer"},
+                  "name": {"type": "string"},
+                  "price": {"type": "number"},
+                  "description": {"type": "string"},
+                  "image_url": {"type": "string"},
+                  "stock_quantity": {"type": "integer"},
+                  "min_stock": {"type": "integer"},
+                  "status": {"type": "integer", "enum": [0, 1]}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật thành công"}
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Xóa sản phẩm",
+        "description": "Admin only",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Xóa thành công"}
+        }
+      }
+    },
+    "/products/{id}/stock": {
+      "put": {
+        "tags": ["Products"],
+        "summary": "Cập nhật tồn kho",
+        "description": "Cộng/trừ/set số lượng tồn kho (Admin/Staff)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action", "quantity"],
+                "properties": {
+                  "action": {"type": "string", "enum": ["add", "subtract", "set"], "example": "add"},
+                  "quantity": {"type": "integer", "example": 50},
+                  "description": {"type": "string", "example": "Nhập hàng"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật tồn kho thành công"}
         }
       }
     }

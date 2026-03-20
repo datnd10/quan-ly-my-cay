@@ -168,13 +168,17 @@ $router->get('customers/my-points/history', 'CustomerController@myPointHistory')
 $router->get('categories/all', 'CategoryController@all'); // Public - lấy tất cả
 $router->get('categories', 'CategoryController@index'); // Public - có phân trang
 $router->get('categories/{id}', 'CategoryController@show'); // Public
-$router->post('categories', 'CategoryController@store'); // Admin/Staff
-$router->put('categories/{id}', 'CategoryController@update'); // Admin/Staff
-$router->delete('categories/{id}', 'CategoryController@destroy'); // Admin only
+$router->post('categories', 'CategoryController@store')->middleware('AuthMiddleware'); // Admin/Staff
+$router->put('categories/{id}', 'CategoryController@update')->middleware('AuthMiddleware'); // Admin/Staff
+$router->delete('categories/{id}', 'CategoryController@destroy')->middleware('AuthMiddleware'); // Admin only
 
-// Example: Products routes (sẽ implement sau)
-// $router->get('products', 'ProductController@index');
-// $router->get('products/{id}', 'ProductController@show');
-// $router->post('products', 'ProductController@store');
-// $router->put('products/{id}', 'ProductController@update');
-// $router->delete('products/{id}', 'ProductController@destroy');
+// ============================================
+// PRODUCT ROUTES
+// ============================================
+$router->get('products/low-stock', 'ProductController@lowStock')->middleware('AuthMiddleware'); // Admin/Staff - phải đặt trước products/{id}
+$router->get('products', 'ProductController@index'); // Public - có phân trang + filter
+$router->get('products/{id}', 'ProductController@show'); // Public
+$router->post('products', 'ProductController@store')->middleware('AuthMiddleware'); // Admin/Staff
+$router->put('products/{id}', 'ProductController@update')->middleware('AuthMiddleware'); // Admin/Staff
+$router->put('products/{id}/stock', 'ProductController@updateStock')->middleware('AuthMiddleware'); // Admin/Staff
+$router->delete('products/{id}', 'ProductController@destroy')->middleware('AuthMiddleware'); // Admin only
