@@ -3,48 +3,15 @@
   "info": {
     "title": "Spicy Noodle Management API",
     "description": "REST API cho hệ thống quản lý nhà hàng mỳ cay",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "contact": {
       "name": "API Support"
     }
   },
   "tags": [
-    {
-      "name": "Health",
-      "description": "Health check endpoints"
-    },
-    {
-      "name": "Auth",
-      "description": "Authentication endpoints"
-    },
-    {
-      "name": "Users",
-      "description": "User management (Admin only)"
-    },
-    {
-      "name": "Products",
-      "description": "Product management"
-    },
-    {
-      "name": "Categories",
-      "description": "Category management"
-    },
-    {
-      "name": "Orders",
-      "description": "Order management"
-    },
-    {
-      "name": "Customers",
-      "description": "Customer management"
-    },
-    {
-      "name": "Tables",
-      "description": "Table management"
-    },
-    {
-      "name": "Branches",
-      "description": "Branch management"
-    }
+    {"name": "Health", "description": "Health check endpoints"},
+    {"name": "Auth", "description": "Authentication endpoints"},
+    {"name": "Users", "description": "User management (Admin only)"}
   ],
   "components": {
     "securitySchemes": {
@@ -58,346 +25,30 @@
       "Error": {
         "type": "object",
         "properties": {
-          "success": {
-            "type": "boolean",
-            "example": false
-          },
-          "message": {
-            "type": "string"
-          },
-          "errors": {
-            "type": "object"
-          }
+          "success": {"type": "boolean", "example": false},
+          "message": {"type": "string"},
+          "errors": {"type": "object"}
         }
       },
       "Pagination": {
         "type": "object",
         "properties": {
-          "total": {
-            "type": "integer"
-          },
-          "per_page": {
-            "type": "integer"
-          },
-          "current_page": {
-            "type": "integer"
-          },
-          "total_pages": {
-            "type": "integer"
-          },
-          "from": {
-            "type": "integer"
-          },
-          "to": {
-            "type": "integer"
-          }
+          "total": {"type": "integer"},
+          "per_page": {"type": "integer"},
+          "current_page": {"type": "integer"},
+          "total_pages": {"type": "integer"},
+          "from": {"type": "integer"},
+          "to": {"type": "integer"}
         }
       },
       "User": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "username": {
-            "type": "string",
-            "example": "admin01"
-          },
-          "role": {
-            "type": "string",
-            "enum": ["ADMIN", "STAFF", "CUSTOMER"],
-            "example": "ADMIN"
-          },
-          "status": {
-            "type": "integer",
-            "enum": [0, 1],
-            "example": 1
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Customer": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "user_id": {
-            "type": "integer",
-            "example": 5
-          },
-          "name": {
-            "type": "string",
-            "example": "Nguyễn Văn A"
-          },
-          "phone": {
-            "type": "string",
-            "example": "0123456789"
-          },
-          "email": {
-            "type": "string",
-            "example": "nguyenvana@gmail.com"
-          },
-          "address": {
-            "type": "string",
-            "example": "123 Đường ABC, Quận 1, TP.HCM"
-          },
-          "points": {
-            "type": "integer",
-            "example": 100
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Category": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "name": {
-            "type": "string",
-            "example": "Mỳ cay"
-          },
-          "description": {
-            "type": "string",
-            "example": "Các món mỳ cay đặc biệt"
-          },
-          "status": {
-            "type": "integer",
-            "enum": [0, 1],
-            "example": 1
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Product": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "category_id": {
-            "type": "integer",
-            "example": 1
-          },
-          "name": {
-            "type": "string",
-            "example": "Mỳ cay hải sản"
-          },
-          "description": {
-            "type": "string",
-            "example": "Mỳ cay với tôm, mực, nghêu"
-          },
-          "price": {
-            "type": "number",
-            "format": "decimal",
-            "example": 45000
-          },
-          "image": {
-            "type": "string",
-            "example": "my-cay-hai-san.jpg"
-          },
-          "status": {
-            "type": "integer",
-            "enum": [0, 1],
-            "example": 1
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Table": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "table_number": {
-            "type": "string",
-            "example": "B01"
-          },
-          "capacity": {
-            "type": "integer",
-            "example": 4
-          },
-          "status": {
-            "type": "string",
-            "enum": ["AVAILABLE", "OCCUPIED", "RESERVED"],
-            "example": "AVAILABLE"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Order": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "customer_id": {
-            "type": "integer",
-            "example": 5
-          },
-          "table_id": {
-            "type": "integer",
-            "example": 3
-          },
-          "staff_id": {
-            "type": "integer",
-            "example": 2
-          },
-          "total_amount": {
-            "type": "number",
-            "format": "decimal",
-            "example": 150000
-          },
-          "discount_amount": {
-            "type": "number",
-            "format": "decimal",
-            "example": 15000
-          },
-          "final_amount": {
-            "type": "number",
-            "format": "decimal",
-            "example": 135000
-          },
-          "status": {
-            "type": "string",
-            "enum": ["PENDING", "CONFIRMED", "PREPARING", "COMPLETED", "CANCELLED"],
-            "example": "PENDING"
-          },
-          "note": {
-            "type": "string",
-            "example": "Không hành"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "OrderItem": {
-        "type": "object",
-        "properties": {
-          "product_id": {
-            "type": "integer",
-            "example": 1
-          },
-          "quantity": {
-            "type": "integer",
-            "example": 2
-          },
-          "price": {
-            "type": "number",
-            "format": "decimal",
-            "example": 45000
-          },
-          "note": {
-            "type": "string",
-            "example": "Ít cay"
-          }
-        }
-      },
-      "Invoice": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "order_id": {
-            "type": "integer",
-            "example": 1
-          },
-          "invoice_number": {
-            "type": "string",
-            "example": "INV-2026-0001"
-          },
-          "total_amount": {
-            "type": "number",
-            "format": "decimal",
-            "example": 135000
-          },
-          "payment_method": {
-            "type": "string",
-            "enum": ["CASH", "CARD", "TRANSFER"],
-            "example": "CASH"
-          },
-          "paid_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Voucher": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "code": {
-            "type": "string",
-            "example": "SUMMER2026"
-          },
-          "discount_type": {
-            "type": "string",
-            "enum": ["PERCENT", "FIXED"],
-            "example": "PERCENT"
-          },
-          "discount_value": {
-            "type": "number",
-            "format": "decimal",
-            "example": 10
-          },
-          "min_order_amount": {
-            "type": "number",
-            "format": "decimal",
-            "example": 100000
-          },
-          "max_discount": {
-            "type": "number",
-            "format": "decimal",
-            "example": 50000
-          },
-          "valid_from": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "valid_to": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "type": "integer",
-            "enum": [0, 1],
-            "example": 1
-          }
+          "id": {"type": "integer", "example": 1},
+          "username": {"type": "string", "example": "admin01"},
+          "role": {"type": "string", "enum": ["ADMIN", "STAFF", "CUSTOMER"], "example": "ADMIN"},
+          "status": {"type": "integer", "enum": [0, 1], "example": 1},
+          "created_at": {"type": "string", "format": "date-time"}
         }
       }
     }
@@ -407,55 +58,34 @@
       "get": {
         "tags": ["Health"],
         "summary": "Health check",
-        "description": "Kiểm tra trạng thái API",
-        "responses": {
-          "200": {
-            "description": "API đang hoạt động"
-          }
-        }
+        "responses": {"200": {"description": "API đang hoạt động"}}
       }
     },
     "/test-db": {
       "get": {
         "tags": ["Health"],
         "summary": "Test database connection",
-        "description": "Kiểm tra kết nối database",
-        "responses": {
-          "200": {
-            "description": "Kết nối database thành công"
-          }
-        }
+        "responses": {"200": {"description": "Kết nối database thành công"}}
       }
     },
     "/migrate": {
       "get": {
         "tags": ["Health"],
         "summary": "Run database migration",
-        "description": "Tạo tất cả bảng trong database tự động",
-        "responses": {
-          "200": {
-            "description": "Migration thành công"
-          }
-        }
+        "responses": {"200": {"description": "Migration thành công"}}
       }
     },
     "/env-check": {
       "get": {
         "tags": ["Health"],
         "summary": "Check environment variables",
-        "description": "Kiểm tra cấu hình môi trường",
-        "responses": {
-          "200": {
-            "description": "Environment info"
-          }
-        }
+        "responses": {"200": {"description": "Environment info"}}
       }
     },
     "/auth/login": {
       "post": {
         "tags": ["Auth"],
         "summary": "Đăng nhập",
-        "description": "Đăng nhập với username và password",
         "requestBody": {
           "required": true,
           "content": {
@@ -464,57 +94,16 @@
                 "type": "object",
                 "required": ["username", "password"],
                 "properties": {
-                  "username": {
-                    "type": "string",
-                    "example": "0123456789"
-                  },
-                  "password": {
-                    "type": "string",
-                    "example": "123456"
-                  }
+                  "username": {"type": "string", "example": "0123456789"},
+                  "password": {"type": "string", "example": "123456"}
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Đăng nhập thành công",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Đăng nhập thành công"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "token": {
-                          "type": "string"
-                        },
-                        "user": {
-                          "type": "object"
-                        },
-                        "profile": {
-                          "type": "object"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Sai username hoặc password"
-          }
+          "200": {"description": "Đăng nhập thành công"},
+          "401": {"description": "Sai username hoặc password"}
         }
       }
     },
@@ -522,7 +111,6 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Đăng ký khách hàng",
-        "description": "Khách hàng tự đăng ký tài khoản (username = phone)",
         "requestBody": {
           "required": true,
           "content": {
@@ -531,34 +119,18 @@
                 "type": "object",
                 "required": ["phone", "password", "name"],
                 "properties": {
-                  "phone": {
-                    "type": "string",
-                    "example": "0123456789"
-                  },
-                  "password": {
-                    "type": "string",
-                    "example": "123456"
-                  },
-                  "name": {
-                    "type": "string",
-                    "example": "Nguyễn Văn A"
-                  },
-                  "email": {
-                    "type": "string",
-                    "example": "nguyenvana@gmail.com"
-                  }
+                  "phone": {"type": "string", "example": "0123456789"},
+                  "password": {"type": "string", "example": "123456"},
+                  "name": {"type": "string", "example": "Nguyen Van A"},
+                  "email": {"type": "string", "example": "nguyenvana@gmail.com"}
                 }
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Đăng ký thành công"
-          },
-          "422": {
-            "description": "Dữ liệu không hợp lệ"
-          }
+          "201": {"description": "Đăng ký thành công"},
+          "422": {"description": "Dữ liệu không hợp lệ"}
         }
       }
     },
@@ -568,12 +140,8 @@
         "summary": "Lấy thông tin user hiện tại",
         "security": [{"bearerAuth": []}],
         "responses": {
-          "200": {
-            "description": "Thông tin user"
-          },
-          "401": {
-            "description": "Chưa đăng nhập"
-          }
+          "200": {"description": "Thông tin user"},
+          "401": {"description": "Chưa đăng nhập"}
         }
       }
     },
@@ -581,7 +149,6 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Đổi mật khẩu",
-        "description": "User đã đăng nhập đổi mật khẩu",
         "security": [{"bearerAuth": []}],
         "requestBody": {
           "required": true,
@@ -591,29 +158,17 @@
                 "type": "object",
                 "required": ["old_password", "new_password"],
                 "properties": {
-                  "old_password": {
-                    "type": "string",
-                    "example": "123456"
-                  },
-                  "new_password": {
-                    "type": "string",
-                    "example": "newpass123"
-                  }
+                  "old_password": {"type": "string", "example": "123456"},
+                  "new_password": {"type": "string", "example": "newpass123"}
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Đổi mật khẩu thành công"
-          },
-          "400": {
-            "description": "Mật khẩu cũ không đúng"
-          },
-          "401": {
-            "description": "Chưa đăng nhập"
-          }
+          "200": {"description": "Đổi mật khẩu thành công"},
+          "400": {"description": "Mật khẩu cũ không đúng"},
+          "401": {"description": "Chưa đăng nhập"}
         }
       }
     },
@@ -621,7 +176,7 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Quên mật khẩu",
-        "description": "Gửi mật khẩu mới (random) qua email",
+        "description": "Gửi mật khẩu mới qua email",
         "requestBody": {
           "required": true,
           "content": {
@@ -630,48 +185,15 @@
                 "type": "object",
                 "required": ["phone"],
                 "properties": {
-                  "phone": {
-                    "type": "string",
-                    "example": "0123456789"
-                  }
+                  "phone": {"type": "string", "example": "0123456789"}
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Mật khẩu mới đã được gửi đến email",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Mật khẩu mới đã được gửi đến email của bạn"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "email": {
-                          "type": "string",
-                          "example": "n****a@gmail.com"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Số điện thoại không tồn tại hoặc chưa có email"
-          }
+          "200": {"description": "Mật khẩu mới đã được gửi đến email"},
+          "400": {"description": "Số điện thoại không tồn tại hoặc chưa có email"}
         }
       }
     },
@@ -679,67 +201,19 @@
       "get": {
         "tags": ["Users"],
         "summary": "Danh sách users (có phân trang)",
-        "description": "Lấy danh sách users với phân trang và filter",
         "security": [{"bearerAuth": []}],
         "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "per_page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 20,
-              "maximum": 100
-            }
-          },
-          {
-            "name": "role",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["ADMIN", "STAFF", "CUSTOMER"]
-            }
-          }
+          {"name": "page", "in": "query", "schema": {"type": "integer", "default": 1}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer", "default": 20, "maximum": 100}},
+          {"name": "role", "in": "query", "schema": {"type": "string", "enum": ["ADMIN", "STAFF", "CUSTOMER"]}}
         ],
         "responses": {
-          "200": {
-            "description": "Danh sách users",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object"
-                      }
-                    },
-                    "pagination": {
-                      "$ref": "#/components/schemas/Pagination"
-                    }
-                  }
-                }
-              }
-            }
-          }
+          "200": {"description": "Danh sách users"}
         }
       },
       "post": {
         "tags": ["Users"],
         "summary": "Tạo user mới (Admin)",
-        "description": "Admin tạo tài khoản Staff/Admin",
         "security": [{"bearerAuth": []}],
         "requestBody": {
           "required": true,
@@ -749,36 +223,18 @@
                 "type": "object",
                 "required": ["username", "password", "role"],
                 "properties": {
-                  "username": {
-                    "type": "string",
-                    "example": "admin01"
-                  },
-                  "password": {
-                    "type": "string",
-                    "example": "123456"
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": ["ADMIN", "STAFF", "CUSTOMER"],
-                    "example": "STAFF"
-                  },
-                  "status": {
-                    "type": "integer",
-                    "enum": [0, 1],
-                    "example": 1
-                  }
+                  "username": {"type": "string", "example": "admin01"},
+                  "password": {"type": "string", "example": "123456"},
+                  "role": {"type": "string", "enum": ["ADMIN", "STAFF", "CUSTOMER"], "example": "STAFF"},
+                  "status": {"type": "integer", "enum": [0, 1], "example": 1}
                 }
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Tạo user thành công"
-          },
-          "422": {
-            "description": "Dữ liệu không hợp lệ"
-          }
+          "201": {"description": "Tạo user thành công"},
+          "422": {"description": "Dữ liệu không hợp lệ"}
         }
       }
     },
@@ -787,39 +243,17 @@
         "tags": ["Users"],
         "summary": "Chi tiết user",
         "security": [{"bearerAuth": []}],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
         "responses": {
-          "200": {
-            "description": "Thông tin user"
-          },
-          "404": {
-            "description": "Không tìm thấy user"
-          }
+          "200": {"description": "Thông tin user"},
+          "404": {"description": "Không tìm thấy user"}
         }
       },
       "put": {
         "tags": ["Users"],
         "summary": "Cập nhật user",
         "security": [{"bearerAuth": []}],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
         "requestBody": {
           "required": true,
           "content": {
@@ -827,223 +261,30 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": ["ADMIN", "STAFF", "CUSTOMER"]
-                  },
-                  "status": {
-                    "type": "integer",
-                    "enum": [0, 1]
-                  }
+                  "username": {"type": "string"},
+                  "password": {"type": "string"},
+                  "role": {"type": "string", "enum": ["ADMIN", "STAFF", "CUSTOMER"]},
+                  "status": {"type": "integer", "enum": [0, 1]}
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Cập nhật thành công"
-          },
-          "404": {
-            "description": "Không tìm thấy user"
-          }
+          "200": {"description": "Cập nhật thành công"},
+          "404": {"description": "Không tìm thấy user"}
         }
       },
       "delete": {
         "tags": ["Users"],
         "summary": "Xóa user",
         "security": [{"bearerAuth": []}],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}],
         "responses": {
-          "200": {
-            "description": "Xóa thành công"
-          },
-          "404": {
-            "description": "Không tìm thấy user"
-          }
+          "200": {"description": "Xóa thành công"},
+          "404": {"description": "Không tìm thấy user"}
         }
       }
     }
   }
 }
-,
-    "/customers": {
-      "get": {
-        "tags": ["Customers"],
-        "summary": "Danh sách khách hàng (có phân trang)",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {"type": "integer", "default": 1}
-          },
-          {
-            "name": "per_page",
-            "in": "query",
-            "schema": {"type": "integer", "default": 20}
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "description": "Tìm theo tên hoặc số điện thoại",
-            "schema": {"type": "string"}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Danh sách khách hàng",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {"type": "boolean", "example": true},
-                    "data": {
-                      "type": "array",
-                      "items": {"$ref": "#/components/schemas/Customer"}
-                    },
-                    "pagination": {"$ref": "#/components/schemas/Pagination"}
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": ["Customers"],
-        "summary": "Tạo khách hàng mới",
-        "security": [{"bearerAuth": []}],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["name", "phone"],
-                "properties": {
-                  "name": {"type": "string", "example": "Nguyễn Văn B"},
-                  "phone": {"type": "string", "example": "0987654321"},
-                  "email": {"type": "string", "example": "nguyenvanb@gmail.com"},
-                  "address": {"type": "string", "example": "456 Đường XYZ"}
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Tạo khách hàng thành công",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {"type": "boolean", "example": true},
-                    "message": {"type": "string", "example": "Tạo khách hàng thành công"},
-                    "data": {"$ref": "#/components/schemas/Customer"}
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/customers/{id}": {
-      "get": {
-        "tags": ["Customers"],
-        "summary": "Chi tiết khách hàng",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
-        ],
-        "responses": {
-          "200": {
-            "description": "Thông tin khách hàng",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {"type": "boolean", "example": true},
-                    "data": {"$ref": "#/components/schemas/Customer"}
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": ["Customers"],
-        "summary": "Cập nhật khách hàng",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {"type": "string"},
-                  "phone": {"type": "string"},
-                  "email": {"type": "string"},
-                  "address": {"type": "string"}
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {"description": "Cập nhật thành công"}
-        }
-      },
-      "delete": {
-        "tags": ["Customers"],
-        "summary": "Xóa khách hàng",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
-        ],
-        "responses": {
-          "200": {"description": "Xóa thành công"}
-        }
-      }
-    },
-    "/categories": {
-      "get": {
-        "tags": ["Categories"],
-        "summary": "Danh sách danh mục (có phân trang)",
-        "parameters": [
-          {"name": "page", "in": "query", "schema": {"type": "integer", "default": 1}},
-          {"name": "per_page", "in": "query", "schema": {"type": "integer", "default": 20}}
-        ],
-        "responses": {
-          "200": {
-            "description": "Danh sách danh mục",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {"type":
