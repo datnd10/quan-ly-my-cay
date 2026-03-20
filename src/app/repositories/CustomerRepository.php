@@ -15,6 +15,66 @@ class CustomerRepository {
     }
     
     /**
+     * Lấy customers có phân trang
+     */
+    public function paginate($page, $perPage, $filters = []) {
+        $offset = ($page - 1) * $perPage;
+        $where = [];
+        $params = [];
+        
+        // Build where clause
+        if (!empty($filters['search'])) {
+            $where[] = "(name LIKE :search OR phone LIKE :search OR email LIKE :search)";
+            $params['search'] = '%' . $filters['search'] . '%';
+        }
+        
+        if (!empty($filters['phone'])) {
+            $where[] = "phone LIKE :phone";
+            $params['phone'] = '%' . $filters['phone'] . '%';
+        }
+        
+        $sql = "SELECT * FROM {$this->table}";
+        
+        if (!empty($where)) {
+            $sql .= " WHERE " . implode(' AND ', $where);
+        }
+        
+        $sql .= " ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
+        
+        $params['limit'] = (int)$perPage;
+        $params['offset'] = (int)$offset;
+        
+        return $this->db->fetchAll($sql, $params);
+    }
+    
+    /**
+     * Đếm tổng số customers
+     */
+    public function count($filters = []) {
+        $where = [];
+        $params = [];
+        
+        if (!empty($filters['search'])) {
+            $where[] = "(name LIKE :search OR phone LIKE :search OR email LIKE :search)";
+            $params['search'] = '%' . $filters['search'] . '%';
+        }
+        
+        if (!empty($filters['phone'])) {
+            $where[] = "phone LIKE :phone";
+            $params['phone'] = '%' . $filters['phone'] . '%';
+        }
+        
+        $sql = "SELECT COUNT(*) as total FROM {$this->table}";
+        
+        if (!empty($where)) {
+            $sql .= " WHERE " . implode(' AND ', $where);
+        }
+        
+        $result = $this->db->fetchOne($sql, $params);
+        return (int)$result['total'];
+    }
+    
+    /**
      * Tìm customer theo ID
      */
     public function findById($id) {

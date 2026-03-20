@@ -126,8 +126,12 @@ class AuthService {
         
         if (empty($data['password'])) {
             $errors['password'] = 'Mật khẩu là bắt buộc';
-        } elseif (strlen($data['password']) < 6) {
-            $errors['password'] = 'Mật khẩu phải có ít nhất 6 ký tự';
+        } else {
+            // Validate strong password
+            $passwordValidation = PasswordValidator::validate($data['password']);
+            if (!$passwordValidation['valid']) {
+                $errors['password'] = implode('. ', $passwordValidation['errors']);
+            }
         }
         
         if (empty($data['name'])) {
@@ -186,9 +190,10 @@ class AuthService {
      * Đổi mật khẩu (user đã đăng nhập)
      */
     public function changePassword($userId, $oldPassword, $newPassword) {
-        // Validate
-        if (strlen($newPassword) < 6) {
-            throw new Exception('Mật khẩu mới phải có ít nhất 6 ký tự');
+        // Validate strong password
+        $passwordValidation = PasswordValidator::validate($newPassword);
+        if (!$passwordValidation['valid']) {
+            throw new Exception(implode('. ', $passwordValidation['errors']));
         }
         
         // Lấy user
@@ -230,7 +235,7 @@ class AuthService {
         }
         
         // Generate random password
-        $newPassword = EmailService::generateRandomPassword(8);
+        $newPassword = PasswordValidator::generate(12);
         
         // Update password
         $this->userRepo->update($user['id'], [

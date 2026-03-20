@@ -89,11 +89,11 @@ return [
     
     // Quy tắc mật khẩu
     'password' => [
-        'min_length' => 6, // Tối thiểu 6 ký tự
-        'require_uppercase' => false, // Không bắt buộc chữ hoa
-        'require_lowercase' => false, // Không bắt buộc chữ thường
-        'require_numbers' => false, // Không bắt buộc số
-        'require_special_chars' => false, // Không bắt buộc ký tự đặc biệt
+        'min_length' => 8, // Tối thiểu 8 ký tự
+        'require_uppercase' => true, // Bắt buộc chữ hoa
+        'require_lowercase' => true, // Bắt buộc chữ thường
+        'require_numbers' => true, // Bắt buộc số
+        'require_special_chars' => true, // Bắt buộc ký tự đặc biệt
     ],
     
     // Cấu hình tích điểm khách hàng

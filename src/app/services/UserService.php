@@ -133,11 +133,19 @@ class UserService {
         if ($isCreate) {
             if (empty($data['password'])) {
                 $errors['password'] = 'Mật khẩu là bắt buộc';
-            } elseif (strlen($data['password']) < 6) {
-                $errors['password'] = 'Mật khẩu phải có ít nhất 6 ký tự';
+            } else {
+                // Validate strong password
+                $passwordValidation = PasswordValidator::validate($data['password']);
+                if (!$passwordValidation['valid']) {
+                    $errors['password'] = implode('. ', $passwordValidation['errors']);
+                }
             }
-        } elseif (isset($data['password']) && !empty($data['password']) && strlen($data['password']) < 6) {
-            $errors['password'] = 'Mật khẩu phải có ít nhất 6 ký tự';
+        } elseif (isset($data['password']) && !empty($data['password'])) {
+            // Validate strong password khi update
+            $passwordValidation = PasswordValidator::validate($data['password']);
+            if (!$passwordValidation['valid']) {
+                $errors['password'] = implode('. ', $passwordValidation['errors']);
+            }
         }
         
         // Role validation

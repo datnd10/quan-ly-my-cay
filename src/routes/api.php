@@ -78,6 +78,18 @@ $router->get('env-check', function() {
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 });
 
+// Get password requirements
+$router->get('password-requirements', function() {
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
+        'data' => [
+            'requirements' => PasswordValidator::getRequirements(),
+            'example' => 'Example@123'
+        ]
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+});
+
 // Swagger documentation
 $router->get('docs', function() {
     header('Content-Type: text/html; charset=utf-8', true);
@@ -122,6 +134,20 @@ $router->get('users/{id}', 'UserController@show');
 $router->post('users', 'UserController@store');
 $router->put('users/{id}', 'UserController@update');
 $router->delete('users/{id}', 'UserController@destroy');
+
+// ============================================
+// CUSTOMER ROUTES (Admin/Staff)
+// ============================================
+$router->get('customers', 'CustomerController@index');
+$router->get('customers/{id}', 'CustomerController@show');
+$router->post('customers', 'CustomerController@store');
+$router->put('customers/{id}', 'CustomerController@update');
+$router->put('customers/{id}/status', 'CustomerController@updateStatus');
+$router->put('customers/{id}/points', 'CustomerController@updatePoints');
+$router->delete('customers/{id}', 'CustomerController@destroy');
+
+// Customer tự cập nhật profile
+$router->put('customers/profile', 'CustomerController@updateProfile');
 
 // Example: Products routes (sẽ implement sau)
 // $router->get('products', 'ProductController@index');
