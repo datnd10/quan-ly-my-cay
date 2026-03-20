@@ -127,8 +127,8 @@ class TableRepository {
             $data['status'] ?? 'AVAILABLE'
         ];
         
-        $this->db->execute($sql, $params);
-        $id = $this->db->lastInsertId();
+        $this->db->query($sql, $params);
+        $id = $this->db->getConnection()->lastInsertId();
         
         return $this->findById($id);
     }
@@ -162,7 +162,7 @@ class TableRepository {
         $params[] = $id;
         $sql = "UPDATE tables SET " . implode(', ', $fields) . " WHERE id = ?";
         
-        $this->db->execute($sql, $params);
+        $this->db->query($sql, $params);
         
         return $this->findById($id);
     }
@@ -172,7 +172,7 @@ class TableRepository {
      */
     public function updateStatus($id, $status) {
         $sql = "UPDATE tables SET status = ? WHERE id = ?";
-        $this->db->execute($sql, [$status, $id]);
+        $this->db->query($sql, [$status, $id]);
         
         return $this->findById($id);
     }
@@ -182,7 +182,7 @@ class TableRepository {
      */
     public function delete($id) {
         $sql = "DELETE FROM tables WHERE id = ?";
-        return $this->db->execute($sql, [$id]);
+        return $this->db->query($sql, [$id]);
     }
     
     /**

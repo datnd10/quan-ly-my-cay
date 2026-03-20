@@ -104,8 +104,8 @@ class ProductRepository {
             $data['status'] ?? 1
         ];
         
-        $this->db->execute($sql, $params);
-        $id = $this->db->lastInsertId();
+        $this->db->query($sql, $params);
+        $id = $this->db->getConnection()->lastInsertId();
         
         return $this->findById($id);
     }
@@ -164,7 +164,7 @@ class ProductRepository {
         $params[] = $id;
         $sql = "UPDATE products SET " . implode(', ', $fields) . " WHERE id = ?";
         
-        $this->db->execute($sql, $params);
+        $this->db->query($sql, $params);
         
         return $this->findById($id);
     }
@@ -174,7 +174,7 @@ class ProductRepository {
      */
     public function delete($id) {
         $sql = "DELETE FROM products WHERE id = ?";
-        return $this->db->execute($sql, [$id]);
+        return $this->db->query($sql, [$id]);
     }
     
     /**
@@ -182,7 +182,7 @@ class ProductRepository {
      */
     public function updateStock($id, $quantity) {
         $sql = "UPDATE products SET stock_quantity = ? WHERE id = ?";
-        return $this->db->execute($sql, [$quantity, $id]);
+        return $this->db->query($sql, [$quantity, $id]);
     }
     
     /**
@@ -190,7 +190,7 @@ class ProductRepository {
      */
     public function adjustStock($id, $amount) {
         $sql = "UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?";
-        return $this->db->execute($sql, [$amount, $id]);
+        return $this->db->query($sql, [$amount, $id]);
     }
     
     /**
