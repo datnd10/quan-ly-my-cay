@@ -80,4 +80,38 @@ class Model {
         $sql = "SELECT * FROM {$this->table} WHERE {$column} {$operator} :value";
         return $this->db->fetchAll($sql, ['value' => $value]);
     }
+    
+    /**
+     * Đếm tổng số records
+     */
+    public function count($where = null, $params = []) {
+        $sql = "SELECT COUNT(*) as total FROM {$this->table}";
+        
+        if ($where) {
+            $sql .= " WHERE {$where}";
+        }
+        
+        $result = $this->db->fetchOne($sql, $params);
+        return (int)$result['total'];
+    }
+    
+    /**
+     * Lấy dữ liệu có phân trang
+     */
+    public function paginate($page = 1, $perPage = 20, $where = null, $params = []) {
+        $offset = ($page - 1) * $perPage;
+        
+        $sql = "SELECT * FROM {$this->table}";
+        
+        if ($where) {
+            $sql .= " WHERE {$where}";
+        }
+        
+        $sql .= " ORDER BY {$this->primaryKey} DESC LIMIT :limit OFFSET :offset";
+        
+        $params['limit'] = (int)$perPage;
+        $params['offset'] = (int)$offset;
+        
+        return $this->db->fetchAll($sql, $params);
+    }
 }

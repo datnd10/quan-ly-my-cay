@@ -76,4 +76,24 @@ class Controller {
         
         return empty($errors) ? true : $errors;
     }
+    
+    /**
+     * Paginated response
+     */
+    protected function paginate($data, $total, $page, $perPage) {
+        $totalPages = ceil($total / $perPage);
+        
+        $this->json([
+            'success' => true,
+            'data' => $data,
+            'pagination' => [
+                'total' => (int)$total,
+                'per_page' => (int)$perPage,
+                'current_page' => (int)$page,
+                'total_pages' => (int)$totalPages,
+                'from' => (($page - 1) * $perPage) + 1,
+                'to' => min($page * $perPage, $total)
+            ]
+        ]);
+    }
 }

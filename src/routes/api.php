@@ -105,6 +105,24 @@ $router->get('docs/openapi.json', function() {
     exit();
 });
 
+// ============================================
+// AUTH ROUTES
+// ============================================
+$router->post('auth/login', 'AuthController@login');
+$router->post('auth/register', 'AuthController@register');
+$router->get('auth/me', 'AuthController@me');
+$router->post('auth/change-password', 'AuthController@changePassword');
+$router->post('auth/forgot-password', 'AuthController@forgotPassword');
+
+// ============================================
+// USER ROUTES (Admin only)
+// ============================================
+$router->get('users', 'UserController@index');
+$router->get('users/{id}', 'UserController@show');
+$router->post('users', 'UserController@store');
+$router->put('users/{id}', 'UserController@update');
+$router->delete('users/{id}', 'UserController@destroy');
+
 // Example: Products routes (sẽ implement sau)
 // $router->get('products', 'ProductController@index');
 // $router->get('products/{id}', 'ProductController@show');

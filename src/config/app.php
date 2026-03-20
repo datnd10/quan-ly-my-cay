@@ -101,4 +101,10 @@ return [
         'points_per_amount' => 1000, // Mỗi 1000 VND = 1 điểm
         'points_to_money_ratio' => 1000, // 1 điểm = 1000 VND khi đổi
     ],
+    
+    // Cấu hình email
+    'mail' => [
+        'from' => getenv('MAIL_FROM') ?: 'noreply@spicynoodle.com',
+        'from_name' => getenv('MAIL_FROM_NAME') ?: 'Spicy Noodle Management',
+    ],
 ];
