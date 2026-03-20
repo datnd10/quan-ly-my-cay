@@ -72,7 +72,7 @@ CREATE TABLE products (
     name VARCHAR(150) NOT NULL,
     price DECIMAL(12,2) NOT NULL,
     description TEXT,
-    image_url VARCHAR(255),
+    image_url TEXT COMMENT 'Multiple images separated by |',
     stock_quantity INT DEFAULT 0 COMMENT 'Số lượng tồn kho',
     min_stock INT DEFAULT 0 COMMENT 'Cảnh báo khi < min_stock',
     status TINYINT DEFAULT 1 COMMENT '1=available, 0=unavailable',

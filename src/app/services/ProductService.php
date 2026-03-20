@@ -265,11 +265,10 @@ class ProductService {
             }
         }
         
-        // Image URL
+        // Image URL (có thể là nhiều URLs ngăn cách bằng |)
         if (isset($data['image_url']) && !empty($data['image_url'])) {
-            if (strlen($data['image_url']) > 255) {
-                $errors['image_url'] = 'URL hình ảnh không được vượt quá 255 ký tự';
-            }
+            // Không giới hạn độ dài vì có thể có nhiều URLs
+            // Chỉ validate format nếu cần
         }
         
         return $errors;
