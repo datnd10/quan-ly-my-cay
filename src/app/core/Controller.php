@@ -96,9 +96,8 @@ class Controller {
             ]
         ]);
     }
-}
 
-    /**
+     /**
      * Xác thực user từ JWT token
      */
     protected function auth() {
