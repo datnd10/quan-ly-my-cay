@@ -33,9 +33,9 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 WORKDIR /var/www/html
 
 # Copy composer files first (for better caching)
-COPY composer.json composer.lock* ./
+COPY composer.json ./
 
-# Install PHP dependencies
+# Install PHP dependencies (will create composer.lock)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Copy custom entrypoint
