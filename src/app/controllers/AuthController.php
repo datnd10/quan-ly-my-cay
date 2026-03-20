@@ -14,9 +14,32 @@ class AuthController extends Controller {
     }
     
     /**
-     * Đăng nhập
-     * POST /api/auth/login
-     * Body: { "username": "0123456789", "password": "123456" }
+     * @OA\Post(
+     *     path="/auth/login",
+     *     tags={"Auth"},
+     *     summary="Đăng nhập",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"username","password"},
+     *             @OA\Property(property="username", type="string", example="0123456789"),
+     *             @OA\Property(property="password", type="string", example="123456")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Đăng nhập thành công",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Đăng nhập thành công"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 @OA\Property(property="token", type="string")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Sai username hoặc password")
+     * )
      */
     public function login() {
         $data = $this->getBody();

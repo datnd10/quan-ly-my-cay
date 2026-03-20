@@ -23,14 +23,19 @@ class CustomerRepository {
         $params = [];
         
         // Build where clause
-        if (!empty($filters['search'])) {
-            $where[] = "(name LIKE :search OR phone LIKE :search OR email LIKE :search)";
-            $params['search'] = '%' . $filters['search'] . '%';
+        if (!empty($filters['name'])) {
+            $where[] = "name LIKE :name";
+            $params['name'] = '%' . $filters['name'] . '%';
         }
         
         if (!empty($filters['phone'])) {
             $where[] = "phone LIKE :phone";
             $params['phone'] = '%' . $filters['phone'] . '%';
+        }
+        
+        if (!empty($filters['email'])) {
+            $where[] = "email LIKE :email";
+            $params['email'] = '%' . $filters['email'] . '%';
         }
         
         $sql = "SELECT * FROM {$this->table}";
@@ -54,14 +59,19 @@ class CustomerRepository {
         $where = [];
         $params = [];
         
-        if (!empty($filters['search'])) {
-            $where[] = "(name LIKE :search OR phone LIKE :search OR email LIKE :search)";
-            $params['search'] = '%' . $filters['search'] . '%';
+        if (!empty($filters['name'])) {
+            $where[] = "name LIKE :name";
+            $params['name'] = '%' . $filters['name'] . '%';
         }
         
         if (!empty($filters['phone'])) {
             $where[] = "phone LIKE :phone";
             $params['phone'] = '%' . $filters['phone'] . '%';
+        }
+        
+        if (!empty($filters['email'])) {
+            $where[] = "email LIKE :email";
+            $params['email'] = '%' . $filters['email'] . '%';
         }
         
         $sql = "SELECT COUNT(*) as total FROM {$this->table}";

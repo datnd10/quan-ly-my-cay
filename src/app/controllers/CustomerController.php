@@ -15,7 +15,7 @@ class CustomerController extends Controller {
     
     /**
      * Lấy danh sách customers (có phân trang + tìm kiếm)
-     * GET /api/customers?page=1&per_page=20&search=nguyen
+     * GET /api/customers?page=1&per_page=20&name=nguyen&phone=0123
      */
     public function index() {
         // Yêu cầu role ADMIN hoặc STAFF
@@ -25,11 +25,14 @@ class CustomerController extends Controller {
         $perPage = min(100, max(1, (int)$this->getQuery('per_page', 20)));
         
         $filters = [];
-        if ($search = $this->getQuery('search')) {
-            $filters['search'] = $search;
+        if ($name = $this->getQuery('name')) {
+            $filters['name'] = $name;
         }
         if ($phone = $this->getQuery('phone')) {
             $filters['phone'] = $phone;
+        }
+        if ($email = $this->getQuery('email')) {
+            $filters['email'] = $email;
         }
         
         try {
@@ -169,9 +172,8 @@ class CustomerController extends Controller {
             return $this->error($e->getMessage(), $statusCode);
         }
     }
-}
 
-    /**
+     /**
      * Khách hàng tự cập nhật thông tin cá nhân
      * PUT /api/customers/profile
      * Body: { "name": "Nguyen Van A", "email": "a@gmail.com", "address": "123 ABC" }

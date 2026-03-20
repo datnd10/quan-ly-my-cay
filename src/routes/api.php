@@ -98,21 +98,30 @@ $router->get('docs', function() {
 });
 
 $router->get('docs/openapi.json', function() {
-    // Đọc file template
-    $openapi = json_decode(file_get_contents(__DIR__ . '/../docs/openapi-template.json'), true);
+    // Đọc file generated từ annotations
+    $openApiFile = __DIR__ . '/../docs/openapi.json';
     
-    // Force Railway domain
-    $openapi['servers'] = [
-        [
-            'url' => 'https://seoul-spicy-production.up.railway.app/api',
-            'description' => 'Production server (Railway)'
-        ]
-    ];
+    // Nếu chưa có file, generate mặc định
+    if (!file_exists($openApiFile)) {
+        $openapi = [
+            'openapi' => '3.0.0',
+            'info' => [
+                'title' => 'Spicy Noodle API',
+                'version' => '1.0.0',
+                'description' => 'REST API - Run: php generate-openapi.php to update docs'
+            ],
+            'servers' => [
+                ['url' => 'https://seoul-spicy-production.up.railway.app/api'],
+                ['url' => 'http://localhost:8000/api']
+            ],
+            'paths' => []
+        ];
+    } else {
+        $openapi = json_decode(file_get_contents($openApiFile), true);
+    }
     
     header('Content-Type: application/json; charset=utf-8', true);
     header('Cache-Control: no-cache, no-store, must-revalidate', true);
-    header('Pragma: no-cache', true);
-    header('Expires: 0', true);
     echo json_encode($openapi, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit();
 });
@@ -148,6 +157,16 @@ $router->delete('customers/{id}', 'CustomerController@destroy');
 
 // Customer tự cập nhật profile
 $router->put('customers/profile', 'CustomerController@updateProfile');
+
+// ============================================
+// CATEGORY ROUTES
+// ============================================
+$router->get('categories/all', 'CategoryController@all'); // Public - lấy tất cả
+$router->get('categories', 'CategoryController@index'); // Public - có phân trang
+$router->get('categories/{id}', 'CategoryController@show'); // Public
+$router->post('categories', 'CategoryController@store'); // Admin/Staff
+$router->put('categories/{id}', 'CategoryController@update'); // Admin/Staff
+$router->delete('categories/{id}', 'CategoryController@destroy'); // Admin only
 
 // Example: Products routes (sẽ implement sau)
 // $router->get('products', 'ProductController@index');
