@@ -66,8 +66,35 @@ class AuthController extends Controller {
      * Header: Authorization: Bearer {token}
      */
     public function me() {
-        // Sẽ implement sau khi có AuthMiddleware
-        $this->success(['message' => 'Get current user info']);
+        try {
+            $user = $this->auth();
+            
+            // Lấy thông tin user từ database
+            $userRepo = new UserRepository();
+            $userInfo = $userRepo->findById($user['user_id']);
+            
+            if (!$userInfo) {
+                return $this->error('Không tìm thấy user', 404);
+            }
+            
+            // Xóa password
+            unset($userInfo['password']);
+            
+            // Nếu là customer, lấy thêm profile
+            $profile = null;
+            if ($userInfo['role'] === ROLE_CUSTOMER) {
+                $customerRepo = new CustomerRepository();
+                $profile = $customerRepo->findByUserId($userInfo['id']);
+            }
+            
+            return $this->success([
+                'user' => $userInfo,
+                'profile' => $profile
+            ]);
+            
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 401);
+        }
     }
     
     /**
@@ -90,16 +117,11 @@ class AuthController extends Controller {
         }
         
         try {
-            // TODO: Lấy user_id từ JWT token sau khi có AuthMiddleware
-            // Tạm thời hardcode để test
-            $userId = $_GET['user_id'] ?? null;
-            
-            if (!$userId) {
-                return $this->error('Vui lòng đăng nhập', 401);
-            }
+            // Lấy user_id từ JWT token
+            $user = $this->auth();
             
             $this->authService->changePassword(
-                $userId,
+                $user['user_id'],
                 $data['old_password'],
                 $data['new_password']
             );

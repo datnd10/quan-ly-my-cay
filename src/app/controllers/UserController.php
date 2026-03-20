@@ -18,6 +18,9 @@ class UserController extends Controller {
      * GET /api/users?page=1&per_page=20&role=STAFF&username=admin
      */
     public function index() {
+        // Yêu cầu role ADMIN
+        $this->requireRole([ROLE_ADMIN]);
+        
         $page = max(1, (int)$this->getQuery('page', 1));
         $perPage = min(100, max(1, (int)$this->getQuery('per_page', 20)));
         
@@ -43,6 +46,9 @@ class UserController extends Controller {
      * GET /api/users/{id}
      */
     public function show($id) {
+        // Yêu cầu role ADMIN
+        $this->requireRole([ROLE_ADMIN]);
+        
         try {
             $user = $this->userService->getUserById($id);
             return $this->success($user);
@@ -58,6 +64,9 @@ class UserController extends Controller {
      * Body: { "username": "admin01", "password": "123456", "role": "STAFF" }
      */
     public function store() {
+        // Yêu cầu role ADMIN
+        $this->requireRole([ROLE_ADMIN]);
+        
         $data = $this->getBody();
         
         try {
@@ -77,6 +86,9 @@ class UserController extends Controller {
      * Body: { "password": "newpass", "status": 0 }
      */
     public function update($id) {
+        // Yêu cầu role ADMIN
+        $this->requireRole([ROLE_ADMIN]);
+        
         $data = $this->getBody();
         
         try {
@@ -95,6 +107,9 @@ class UserController extends Controller {
      * DELETE /api/users/{id}
      */
     public function destroy($id) {
+        // Yêu cầu role ADMIN
+        $this->requireRole([ROLE_ADMIN]);
+        
         try {
             $this->userService->deleteUser($id);
             return $this->success(null, 'Xóa user thành công');

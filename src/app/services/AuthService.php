@@ -43,22 +43,11 @@ class AuthService {
             throw new Exception('Tài khoản đã bị khóa');
         }
         
-        // Lấy profile nếu là customer
-        $profile = null;
-        if ($user['role'] === ROLE_CUSTOMER) {
-            $profile = $this->customerRepo->findByUserId($user['id']);
-        }
-        
         // Tạo token
         $token = $this->generateJWT($user);
         
-        // Xóa password
-        unset($user['password']);
-        
         return [
-            'token' => $token,
-            'user' => $user,
-            'profile' => $profile
+            'token' => $token
         ];
     }
     
@@ -248,20 +237,16 @@ class AuthService {
             'password' => password_hash($newPassword, PASSWORD_DEFAULT)
         ]);
         
-        // Gửi email
-        try {
-            $this->emailService->sendResetPassword(
-                $customer['email'],
-                $customer['name'],
-                $newPassword
-            );
-        } catch (Exception $e) {
-            // Rollback password nếu gửi email thất bại
-            throw new Exception('Không thể gửi email. Vui lòng thử lại sau.');
-        }
+        // Gửi email (nếu fail thì vẫn giữ password mới)
+        $this->emailService->sendResetPassword(
+            $customer['email'],
+            $customer['name'],
+            $newPassword
+        );
         
         return [
-            'email' => $this->maskEmail($customer['email'])
+            'email' => $this->maskEmail($customer['email']),
+            'new_password' => $newPassword // Trả về password để test (production nên xóa)
         ];
     }
     

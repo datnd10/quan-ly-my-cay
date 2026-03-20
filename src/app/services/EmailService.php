@@ -64,6 +64,22 @@ class EmailService {
      * Gửi email
      */
     private function send($to, $subject, $message) {
+        // Kiểm tra có bật gửi email thật không
+        $config = require __DIR__ . '/../../config/app.php';
+        $mailEnabled = $config['mail']['enabled'] ?? false;
+        
+        if (!$mailEnabled) {
+            // Chế độ development: chỉ log, không gửi thật
+            error_log("=== EMAIL DEBUG ===");
+            error_log("To: {$to}");
+            error_log("Subject: {$subject}");
+            error_log("Message: " . strip_tags($message));
+            error_log("==================");
+            
+            return true; // Giả lập gửi thành công
+        }
+        
+        // Gửi email thật
         $headers = [
             'MIME-Version: 1.0',
             'Content-type: text/html; charset=utf-8',

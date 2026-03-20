@@ -97,3 +97,22 @@ class Controller {
         ]);
     }
 }
+
+    /**
+     * Xác thực user từ JWT token
+     */
+    protected function auth() {
+        $middleware = new AuthMiddleware();
+        return $middleware->authenticate();
+    }
+    
+    /**
+     * Kiểm tra role
+     */
+    protected function requireRole($allowedRoles) {
+        $user = $this->auth();
+        $middleware = new AuthMiddleware();
+        $middleware->checkRole($user, $allowedRoles);
+        return $user;
+    }
+}

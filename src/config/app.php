@@ -104,6 +104,7 @@ return [
     
     // Cấu hình email
     'mail' => [
+        'enabled' => getenv('MAIL_ENABLED') === 'true' ? true : false, // Bật/tắt gửi email thật
         'from' => getenv('MAIL_FROM') ?: 'noreply@spicynoodle.com',
         'from_name' => getenv('MAIL_FROM_NAME') ?: 'Spicy Noodle Management',
     ],
