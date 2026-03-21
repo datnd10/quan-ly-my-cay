@@ -79,10 +79,13 @@ class EmailService {
      * Gửi email
      */
     private function send($to, $subject, $message) {
+        error_log("EmailService->send() called for: {$to}");
+        error_log("MAIL_ENABLED: " . ($this->enabled ? 'true' : 'false'));
+        
         // Kiểm tra có bật gửi email thật không
         if (!$this->enabled) {
             // Chế độ development: chỉ log, không gửi thật
-            error_log("=== EMAIL DEBUG ===");
+            error_log("=== EMAIL DEBUG (Development Mode) ===");
             error_log("To: {$to}");
             error_log("Subject: {$subject}");
             error_log("Message: " . strip_tags($message));
@@ -93,10 +96,16 @@ class EmailService {
         
         // Kiểm tra SMTP config
         if (empty($this->smtpHost) || empty($this->smtpUser) || empty($this->smtpPass)) {
-            error_log("SMTP not configured. Email not sent to: {$to}");
+            error_log("SMTP not configured properly:");
+            error_log("  Host: " . ($this->smtpHost ?: 'EMPTY'));
+            error_log("  User: " . ($this->smtpUser ?: 'EMPTY'));
+            error_log("  Pass: " . (empty($this->smtpPass) ? 'EMPTY' : 'SET'));
+            error_log("Email not sent to: {$to}");
             // Không throw exception để không block flow
             return true;
         }
+        
+        error_log("Attempting to send email via SMTP to: {$to}");
         
         try {
             $mail = new PHPMailer(true);
@@ -107,9 +116,28 @@ class EmailService {
             $mail->SMTPAuth = true;
             $mail->Username = $this->smtpUser;
             $mail->Password = $this->smtpPass;
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            
+            // Tự động chọn encryption dựa vào port
+            if ($this->smtpPort == 465) {
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL
+            } else {
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // TLS
+            }
+            
             $mail->Port = $this->smtpPort;
             $mail->CharSet = 'UTF-8';
+            
+            // Timeout settings để tránh treo - QUAN TRỌNG!
+            $mail->Timeout = 5; // Giảm xuống 5 giây
+            $mail->SMTPDebug = 0; // Tắt debug output
+            $mail->SMTPKeepAlive = false; // Không giữ connection
+            $mail->SMTPOptions = [
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                ]
+            ];
             
             // Sender & recipient
             $mail->setFrom($this->from, $this->fromName);
@@ -121,12 +149,22 @@ class EmailService {
             $mail->Body = $message;
             $mail->AltBody = strip_tags($message);
             
+            error_log("Sending email...");
+            $startTime = microtime(true);
+            
             $mail->send();
+            
+            $duration = round(microtime(true) - $startTime, 2);
+            error_log("Email sent successfully to: {$to} in {$duration}s");
             return true;
             
         } catch (PHPMailerException $e) {
-            error_log("Email send failed: " . $e->getMessage());
+            $duration = round(microtime(true) - $startTime, 2);
+            error_log("Email send failed after {$duration}s: " . $e->getMessage());
             // Không throw exception để không block flow
+            return false;
+        } catch (Exception $e) {
+            error_log("Email send error: " . $e->getMessage());
             return false;
         }
     }

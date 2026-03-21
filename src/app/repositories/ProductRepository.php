@@ -15,6 +15,7 @@ class ProductRepository {
     
     /**
      * Lấy danh sách products với phân trang và filter
+     * Updated: 2026-03-20
      */
     public function getProducts($page = 1, $perPage = 20, $filters = []) {
         $offset = ($page - 1) * $perPage;
