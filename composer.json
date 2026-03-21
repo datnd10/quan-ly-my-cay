@@ -4,7 +4,8 @@
     "type": "project",
     "require": {
         "php": ">=8.0",
-        "cloudinary/cloudinary_php": "^2.0"
+        "cloudinary/cloudinary_php": "^2.0",
+        "phpmailer/phpmailer": "^6.8"
     },
     "require-dev": {
         "zircote/swagger-php": "^4.0"

@@ -1,19 +1,34 @@
 <?php
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
+
 /**
  * Email Service
  * 
- * Gửi email sử dụng PHP mail() hoặc SMTP
+ * Gửi email sử dụng PHPMailer với SMTP
  */
 
 class EmailService {
     private $from;
     private $fromName;
+    private $enabled;
+    private $smtpHost;
+    private $smtpPort;
+    private $smtpUser;
+    private $smtpPass;
     
     public function __construct() {
         $config = require __DIR__ . '/../../config/app.php';
         $this->from = $config['mail']['from'] ?? 'noreply@spicynoodle.com';
         $this->fromName = $config['mail']['from_name'] ?? 'Spicy Noodle';
+        $this->enabled = $config['mail']['enabled'] ?? false;
+        
+        // SMTP config
+        $this->smtpHost = getenv('SMTP_HOST') ?: '';
+        $this->smtpPort = getenv('SMTP_PORT') ?: 587;
+        $this->smtpUser = getenv('SMTP_USER') ?: '';
+        $this->smtpPass = getenv('SMTP_PASS') ?: '';
     }
     
     /**
@@ -65,10 +80,7 @@ class EmailService {
      */
     private function send($to, $subject, $message) {
         // Kiểm tra có bật gửi email thật không
-        $config = require __DIR__ . '/../../config/app.php';
-        $mailEnabled = $config['mail']['enabled'] ?? false;
-        
-        if (!$mailEnabled) {
+        if (!$this->enabled) {
             // Chế độ development: chỉ log, không gửi thật
             error_log("=== EMAIL DEBUG ===");
             error_log("To: {$to}");
@@ -79,21 +91,44 @@ class EmailService {
             return true; // Giả lập gửi thành công
         }
         
-        // Gửi email thật
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-type: text/html; charset=utf-8',
-            "From: {$this->fromName} <{$this->from}>",
-            'X-Mailer: PHP/' . phpversion()
-        ];
-        
-        $success = mail($to, $subject, $message, implode("\r\n", $headers));
-        
-        if (!$success) {
-            throw new Exception('Không thể gửi email. Vui lòng thử lại sau.');
+        // Kiểm tra SMTP config
+        if (empty($this->smtpHost) || empty($this->smtpUser) || empty($this->smtpPass)) {
+            error_log("SMTP not configured. Email not sent to: {$to}");
+            // Không throw exception để không block flow
+            return true;
         }
         
-        return true;
+        try {
+            $mail = new PHPMailer(true);
+            
+            // SMTP settings
+            $mail->isSMTP();
+            $mail->Host = $this->smtpHost;
+            $mail->SMTPAuth = true;
+            $mail->Username = $this->smtpUser;
+            $mail->Password = $this->smtpPass;
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = $this->smtpPort;
+            $mail->CharSet = 'UTF-8';
+            
+            // Sender & recipient
+            $mail->setFrom($this->from, $this->fromName);
+            $mail->addAddress($to);
+            
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body = $message;
+            $mail->AltBody = strip_tags($message);
+            
+            $mail->send();
+            return true;
+            
+        } catch (PHPMailerException $e) {
+            error_log("Email send failed: " . $e->getMessage());
+            // Không throw exception để không block flow
+            return false;
+        }
     }
     
     /**
