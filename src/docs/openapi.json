@@ -119,7 +119,7 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Đổi mật khẩu",
-        "description": "User đổi mật khẩu của chính mình",
+        "description": "User đổi mật khẩu của chính mình (yêu cầu đăng nhập)",
         "security": [{"bearerAuth": []}],
         "requestBody": {
           "required": true,
@@ -129,15 +129,30 @@
                 "type": "object",
                 "required": ["old_password", "new_password"],
                 "properties": {
-                  "old_password": {"type": "string"},
-                  "new_password": {"type": "string"}
+                  "old_password": {"type": "string", "example": "OldPass@123"},
+                  "new_password": {"type": "string", "example": "NewPass@456", "description": "Mật khẩu mới phải đủ mạnh (8+ ký tự, có chữ hoa, chữ thường, số, ký tự đặc biệt)"}
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {"description": "Đổi mật khẩu thành công"}
+          "200": {
+            "description": "Đổi mật khẩu thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"}
+                  }
+                }
+              }
+            }
+          },
+          "400": {"description": "Mật khẩu cũ không đúng hoặc mật khẩu mới không đủ mạnh"},
+          "401": {"description": "Chưa đăng nhập"}
         }
       }
     },
@@ -145,23 +160,43 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Quên mật khẩu",
-        "description": "Gửi mật khẩu mới qua email",
+        "description": "Gửi mật khẩu mới qua email (tìm user bằng số điện thoại)",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email"],
+                "required": ["phone"],
                 "properties": {
-                  "email": {"type": "string", "example": "user@example.com"}
+                  "phone": {"type": "string", "example": "0123456789", "description": "Số điện thoại đã đăng ký"}
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {"description": "Email đã được gửi"}
+          "200": {
+            "description": "Email đã được gửi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "email": {"type": "string", "description": "Email đã được mask (e***e@gmail.com)"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {"description": "Số điện thoại không tồn tại hoặc chưa có email"}
         }
       }
     },

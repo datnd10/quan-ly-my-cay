@@ -86,8 +86,8 @@ $router->get('docs', function() {
 });
 
 $router->get('docs/openapi.json', function() {
-    // Đọc file template
-    $openapi = json_decode(file_get_contents(__DIR__ . '/../docs/openapi-template.json'), true);
+    // Đọc file openapi.json
+    $openapi = json_decode(file_get_contents(__DIR__ . '/../docs/openapi.json'), true);
     
     // Force Railway domain
     $openapi['servers'] = [
@@ -112,6 +112,8 @@ $router->post('auth/register', 'AuthController@register');
 $router->post('auth/login', 'AuthController@login');
 $router->post('auth/refresh', 'AuthController@refresh');
 $router->get('auth/me', 'AuthController@me');
+$router->post('auth/change-password', 'AuthController@changePassword');
+$router->post('auth/forgot-password', 'AuthController@forgotPassword');
 
 // ============================================
 // CATEGORY ROUTES
