@@ -42,7 +42,7 @@ class OrderService {
         
         // Lấy items của order
         $items = $this->orderRepo->getOrderItems($id);
-        $order['items'] = $items;
+        $order->items = $items;
         
         return $order;
     }
@@ -59,8 +59,8 @@ class OrderService {
         }
         
         // Lấy items của order
-        $items = $this->orderRepo->getOrderItems($order['id']);
-        $order['items'] = $items;
+        $items = $this->orderRepo->getOrderItems($order->id);
+        $order->items = $items;
         
         return $order;
     }
