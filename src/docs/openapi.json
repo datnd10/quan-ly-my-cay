@@ -1266,6 +1266,93 @@
         }
       }
     },
+    "/orders/table/{tableId}/active": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Lấy order đang ACTIVE của bàn",
+        "description": "Lấy order đang ACTIVE (đang ăn) của 1 bàn cụ thể. Dùng để gọi thêm món cho bàn đang có khách. Admin/Staff only.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "tableId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer"},
+            "description": "ID của bàn",
+            "example": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success - Trả về order đang ACTIVE với items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean", "example": true},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "integer", "example": 2},
+                        "customer_id": {"type": "integer", "nullable": true, "example": null},
+                        "table_id": {"type": "integer", "example": 3},
+                        "voucher_id": {"type": "integer", "nullable": true, "example": null},
+                        "status": {"type": "string", "example": "ACTIVE"},
+                        "total_amount": {"type": "number", "example": 115000},
+                        "discount_amount": {"type": "number", "example": 0},
+                        "final_amount": {"type": "number", "example": 115000},
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer", "example": 1},
+                              "product_id": {"type": "integer", "example": 5},
+                              "product_name": {"type": "string", "example": "Mì cay hải sản"},
+                              "product_image": {"type": "string", "example": "https://..."},
+                              "quantity": {"type": "integer", "example": 2},
+                              "price": {"type": "number", "example": 45000},
+                              "total": {"type": "number", "example": 90000}
+                            }
+                          }
+                        },
+                        "table": {
+                          "type": "object",
+                          "properties": {
+                            "id": {"type": "integer", "example": 3},
+                            "table_number": {"type": "string", "example": "B02"},
+                            "capacity": {"type": "integer", "example": 4},
+                            "status": {"type": "string", "example": "OCCUPIED"}
+                          }
+                        },
+                        "created_at": {"type": "string", "example": "2026-03-23 09:43:52"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bàn chưa có order hoặc order đã hoàn thành",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean", "example": false},
+                    "message": {"type": "string", "example": "Bàn này chưa có order hoặc order đã hoàn thành"}
+                  }
+                }
+              }
+            }
+          },
+          "401": {"description": "Unauthorized - Chưa đăng nhập"},
+          "403": {"description": "Forbidden - Không có quyền (chỉ Admin/Staff)"}
+        }
+      }
+    },
     "/orders/{id}": {
       "get": {
         "tags": ["Orders"],
