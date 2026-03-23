@@ -31,7 +31,8 @@
     {"name": "Categories", "description": "Category management"},
     {"name": "Products", "description": "Product management"},
     {"name": "Tables", "description": "Table management"},
-    {"name": "Vouchers", "description": "Voucher management"}
+    {"name": "Vouchers", "description": "Voucher management"},
+    {"name": "Orders", "description": "Order management"}
   ],
   "paths": {
     "/auth/login": {
@@ -345,6 +346,48 @@
         },
         "responses": {
           "201": {"description": "Tạo khách hàng thành công"}
+        }
+      }
+    },
+    "/customers/search": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Tìm kiếm nhanh customer theo SĐT",
+        "description": "Tìm kiếm customer theo SĐT để hiển thị dropdown/autocomplete khi tạo order (Admin/Staff). Trả về tối đa 10 kết quả.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "phone", "in": "query", "required": true, "schema": {"type": "string"}, "description": "Số điện thoại cần tìm (match bất kỳ đâu)", "example": "0987"}
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {"type": "integer"},
+                          "name": {"type": "string"},
+                          "phone": {"type": "string"},
+                          "email": {"type": "string"},
+                          "points": {"type": "integer"},
+                          "created_at": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {"description": "Số điện thoại không được để trống"}
         }
       }
     },
@@ -1138,6 +1181,314 @@
         ],
         "responses": {
           "200": {"description": "Xóa thành công"}
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Danh sách đơn hàng",
+        "description": "Lấy danh sách đơn hàng. Customer chỉ xem đơn của mình, Admin/Staff xem tất cả.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["DRAFT", "PENDING", "CONFIRMED", "PREPARING", "READY", "COMPLETED", "CANCELLED"]}},
+          {"name": "customer_id", "in": "query", "schema": {"type": "integer"}},
+          {"name": "table_id", "in": "query", "schema": {"type": "integer"}},
+          {"name": "from_date", "in": "query", "schema": {"type": "string", "format": "date"}, "example": "2026-03-01"},
+          {"name": "to_date", "in": "query", "schema": {"type": "string", "format": "date"}, "example": "2026-03-31"}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Tạo đơn hàng mới",
+        "description": "Staff/Admin tạo đơn mới cho bàn. Bàn sẽ chuyển sang OCCUPIED.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {"type": "integer", "description": "ID khách hàng (optional)"},
+                  "table_id": {"type": "integer", "description": "ID bàn (required)", "example": 1}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tạo đơn hàng thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "integer"},
+                        "customer_id": {"type": "integer"},
+                        "table_id": {"type": "integer"},
+                        "status": {"type": "string", "example": "PENDING"},
+                        "total_amount": {"type": "number"},
+                        "discount_amount": {"type": "number"},
+                        "final_amount": {"type": "number"},
+                        "items": {"type": "array"},
+                        "created_at": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Chi tiết đơn hàng",
+        "description": "Xem chi tiết đơn hàng với items. Customer chỉ xem đơn của mình.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "delete": {
+        "tags": ["Orders"],
+        "summary": "Xóa đơn hàng",
+        "description": "Xóa đơn hàng (chỉ DRAFT/PENDING chưa có items). Admin/Staff only.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Xóa thành công"}
+        }
+      }
+    },
+    "/orders/{id}/items": {
+      "put": {
+        "tags": ["Orders"],
+        "summary": "Cập nhật items của đơn hàng",
+        "description": "Thêm/sửa/xóa items trong 1 API. Gửi toàn bộ danh sách items mới (items không có trong list sẽ bị xóa). Chỉ sửa được khi DRAFT/PENDING.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["items"],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["product_id", "quantity"],
+                      "properties": {
+                        "product_id": {"type": "integer", "example": 10},
+                        "quantity": {"type": "integer", "example": 2}
+                      }
+                    },
+                    "example": [
+                      {"product_id": 10, "quantity": 2},
+                      {"product_id": 15, "quantity": 1},
+                      {"product_id": 20, "quantity": 3}
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cập nhật món thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "description": "Order object với items đã cập nhật và total_amount, final_amount đã tính lại"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}/voucher": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Áp dụng voucher",
+        "description": "Áp dụng voucher cho đơn hàng. Chỉ áp dụng được khi DRAFT/PENDING.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["voucher_code"],
+                "properties": {
+                  "voucher_code": {"type": "string", "example": "SUMMER2024"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Áp dụng voucher thành công"}
+        }
+      },
+      "delete": {
+        "tags": ["Orders"],
+        "summary": "Hủy voucher",
+        "description": "Hủy voucher đã áp dụng. Chỉ hủy được khi DRAFT/PENDING.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Hủy voucher thành công"}
+        }
+      }
+    },
+    "/orders/{id}/confirm": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Xác nhận đơn hàng",
+        "description": "Xác nhận đơn hàng (PENDING → CONFIRMED). Sẽ trừ stock sản phẩm. Sau khi confirm không sửa được nữa.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Xác nhận đơn hàng thành công"}
+        }
+      }
+    },
+    "/orders/{id}/status": {
+      "put": {
+        "tags": ["Orders"],
+        "summary": "Thay đổi trạng thái đơn hàng",
+        "description": "Cập nhật trạng thái đơn hàng theo luồng: PENDING → CONFIRMED → PREPARING → READY → COMPLETED",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {"type": "string", "enum": ["CONFIRMED", "PREPARING", "READY", "COMPLETED"], "example": "PREPARING"},
+                  "note": {"type": "string", "description": "Ghi chú (optional)"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật trạng thái thành công"}
+        }
+      }
+    },
+    "/orders/{id}/cancel": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Hủy đơn hàng",
+        "description": "Hủy đơn hàng. Sẽ hoàn stock, revert voucher, free bàn. Customer có thể hủy đơn của mình.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {"type": "string", "description": "Lý do hủy (optional)", "example": "Khách hàng yêu cầu hủy"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Hủy đơn hàng thành công"}
+        }
+      }
+    },
+    "/orders/{id}/history": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Lịch sử thay đổi trạng thái",
+        "description": "Xem lịch sử thay đổi trạng thái của đơn hàng (Admin/Staff)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {"type": "integer"},
+                          "order_id": {"type": "integer"},
+                          "old_status": {"type": "string"},
+                          "new_status": {"type": "string"},
+                          "changed_by": {"type": "integer"},
+                          "changed_by_username": {"type": "string"},
+                          "note": {"type": "string"},
+                          "created_at": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
