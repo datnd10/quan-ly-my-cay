@@ -186,6 +186,7 @@ $router->get('dashboard/voucher-stats', 'DashboardController@voucherStats');
 // ============================================
 // ORDER ROUTES
 // ============================================
+$router->get('orders/table/{tableId}/active', 'OrderController@getActiveByTable'); // Lấy order đang ACTIVE của bàn
 $router->get('orders', 'OrderController@index');
 $router->get('orders/{id}', 'OrderController@show');
 $router->post('orders', 'OrderController@store');

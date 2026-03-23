@@ -40,6 +40,28 @@ class OrderService {
             throw new Exception('Không tìm thấy đơn hàng');
         }
         
+        // Lấy items của order
+        $items = $this->orderRepo->getOrderItems($id);
+        $order['items'] = $items;
+        
+        return $order;
+    }
+    
+    /**
+     * Lấy order đang ACTIVE của 1 bàn
+     * Dùng để gọi thêm món cho bàn đang ăn
+     */
+    public function getActiveOrderByTable($tableId) {
+        $order = $this->orderRepo->findActiveByTable($tableId);
+        
+        if (!$order) {
+            throw new Exception('Bàn này chưa có order hoặc order đã hoàn thành');
+        }
+        
+        // Lấy items của order
+        $items = $this->orderRepo->getOrderItems($order['id']);
+        $order['items'] = $items;
+        
         return $order;
     }
     

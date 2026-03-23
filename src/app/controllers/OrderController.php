@@ -81,6 +81,23 @@ class OrderController extends Controller {
     }
     
     /**
+     * GET /orders/table/{tableId}/active
+     * Lấy order đang ACTIVE của 1 bàn
+     */
+    public function getActiveByTable($tableId) {
+        try {
+            $this->auth(['ADMIN', 'STAFF']);
+            
+            $order = $this->orderService->getActiveOrderByTable($tableId);
+            
+            $this->success($order);
+            
+        } catch (Exception $e) {
+            return $this->handleException($e);
+        }
+    }
+    
+    /**
      * POST /orders
      * Tạo order mới (có thể kèm items)
      */
