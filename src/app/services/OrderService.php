@@ -69,8 +69,11 @@ class OrderService {
      * Tạo order mới - Có thể tạo kèm items luôn
      */
     public function createOrder($data, $userId) {
+        error_log("OrderService->createOrder() - Input data: " . json_encode($data));
+        
         // Validate table
         if (!empty($data['table_id'])) {
+            error_log("Validating table_id: " . $data['table_id']);
             $table = $this->tableRepo->findById($data['table_id']);
             
             if (!$table) {
@@ -116,15 +119,23 @@ class OrderService {
             
             // Thêm items nếu có
             if (!empty($data['items']) && is_array($data['items'])) {
+                error_log("Adding " . count($data['items']) . " items to order");
+                
                 foreach ($data['items'] as $item) {
+                    error_log("Processing item: " . json_encode($item));
+                    
                     if (empty($item['product_id']) || empty($item['quantity'])) {
+                        error_log("Skipping item - missing product_id or quantity");
                         continue;
                     }
                     
                     $product = $this->productRepo->findById($item['product_id']);
-                    if (!$product || $product->status !== 'ACTIVE') {
+                    if (!$product || $product->status !== 1) {
+                        error_log("Skipping item - product not found or inactive: " . $item['product_id']);
                         continue;
                     }
+                    
+                    error_log("Adding item: product_id={$item['product_id']}, quantity={$item['quantity']}, price={$product->price}");
                     
                     $this->orderRepo->addItem(
                         $order->id,
@@ -136,6 +147,8 @@ class OrderService {
                 
                 // Recalculate
                 $this->recalculateOrder($order->id);
+            } else {
+                error_log("No items to add - items: " . json_encode($data['items'] ?? null));
             }
             
             $this->db->commit();

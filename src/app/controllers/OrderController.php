@@ -107,11 +107,19 @@ class OrderController extends Controller {
             
             $data = $this->getBody();
             
+            // Debug: Log request data
+            error_log("OrderController->store() - Request data: " . json_encode($data));
+            
+            if (empty($data)) {
+                return $this->error('Request body không hợp lệ hoặc rỗng', 400);
+            }
+            
             $order = $this->orderService->createOrder($data, $user['user_id']);
             
             $this->success($order, 'Tạo đơn hàng thành công', 201);
             
         } catch (Exception $e) {
+            error_log("OrderController->store() - Error: " . $e->getMessage());
             return $this->handleException($e);
         }
     }
