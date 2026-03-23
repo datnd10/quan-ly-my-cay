@@ -139,6 +139,7 @@ $router->delete('products/{id}', 'ProductController@destroy');
 // ============================================
 // CUSTOMER ROUTES
 // ============================================
+$router->get('customers/search', 'CustomerController@search'); // Search by phone (phải đặt trước {id})
 $router->get('customers', 'CustomerController@index');
 $router->get('customers/{id}', 'CustomerController@show');
 $router->post('customers', 'CustomerController@store');
@@ -172,6 +173,27 @@ $router->get('vouchers/{id}', 'VoucherController@show'); // Admin/Staff
 $router->post('vouchers', 'VoucherController@store'); // Admin only
 $router->put('vouchers/{id}', 'VoucherController@update'); // Admin only
 $router->delete('vouchers/{id}', 'VoucherController@destroy'); // Admin only
+
+// ============================================
+// ORDER ROUTES
+// ============================================
+$router->get('orders', 'OrderController@index');
+$router->get('orders/{id}', 'OrderController@show');
+$router->post('orders', 'OrderController@store');
+$router->delete('orders/{id}', 'OrderController@destroy');
+
+// Order items (1 API để thêm/sửa/xóa tất cả)
+$router->put('orders/{id}/items', 'OrderController@updateItems');
+
+// Order voucher
+$router->post('orders/{id}/voucher', 'OrderController@applyVoucher');
+$router->delete('orders/{id}/voucher', 'OrderController@removeVoucher');
+
+// Order actions
+$router->post('orders/{id}/confirm', 'OrderController@confirm');
+$router->put('orders/{id}/status', 'OrderController@updateStatus');
+$router->post('orders/{id}/cancel', 'OrderController@cancel');
+$router->get('orders/{id}/history', 'OrderController@history');
 
 // ============================================
 // USER ROUTES (Admin only)

@@ -40,6 +40,14 @@ class CustomerService {
     }
     
     /**
+     * Tìm kiếm nhanh customer theo SĐT (cho dropdown/autocomplete)
+     * Trả về tối đa 10 kết quả
+     */
+    public function searchByPhone($phone) {
+        return $this->customerRepo->searchByPhone($phone, 10);
+    }
+    
+    /**
      * Lấy chi tiết customer
      */
     public function getCustomerById($id) {

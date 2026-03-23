@@ -45,6 +45,30 @@ class CustomerController extends Controller {
     }
     
     /**
+     * Tìm kiếm nhanh customer theo SĐT (cho dropdown/autocomplete khi tạo order)
+     * GET /api/customers/search?phone=0987
+     * Trả về list customers match với phone (không phân trang, limit 10)
+     */
+    public function search() {
+        // Yêu cầu role ADMIN hoặc STAFF
+        $this->requireRole([ROLE_ADMIN, ROLE_STAFF]);
+        
+        $phone = $this->getQuery('phone');
+        
+        if (empty($phone)) {
+            return $this->error('Số điện thoại không được để trống', 400);
+        }
+        
+        try {
+            $customers = $this->customerService->searchByPhone($phone);
+            return $this->success($customers);
+            
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
+    
+    /**
      * Lấy chi tiết customer
      * GET /api/customers/{id}
      */

@@ -146,4 +146,21 @@ class CustomerRepository {
         $sql = "UPDATE {$this->table} SET points = points + :points WHERE id = :id";
         return $this->db->query($sql, ['points' => $points, 'id' => $id]);
     }
+    
+    /**
+     * Tìm kiếm nhanh customer theo SĐT (cho dropdown/autocomplete)
+     * Trả về các field cần thiết: id, name, phone, email, points
+     */
+    public function searchByPhone($phone, $limit = 10) {
+        $sql = "SELECT id, name, phone, email, points, created_at 
+                FROM {$this->table} 
+                WHERE phone LIKE :phone 
+                ORDER BY created_at DESC 
+                LIMIT :limit";
+        
+        return $this->db->fetchAll($sql, [
+            'phone' => '%' . $phone . '%',
+            'limit' => (int)$limit
+        ]);
+    }
 }
