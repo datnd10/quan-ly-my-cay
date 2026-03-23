@@ -21,6 +21,7 @@ Thumbs.db
 # Environment
 .env
 .env.local
+.env.example
 
 # Deployment
 deploy.sh.log
