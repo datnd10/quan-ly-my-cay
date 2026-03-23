@@ -239,8 +239,12 @@ class OrderService {
             
             // Hoàn lại stock của items cũ
             foreach ($oldItems as $oldItem) {
-                $this->productRepo->adjustStock($oldItem['product_id'], $oldItem['quantity']);
-                error_log("Restored stock: product_id={$oldItem['product_id']}, quantity={$oldItem['quantity']}");
+                // OrderItem có thể là object hoặc array, xử lý cả 2 trường hợp
+                $productId = is_array($oldItem) ? $oldItem['product_id'] : $oldItem->product_id;
+                $quantity = is_array($oldItem) ? $oldItem['quantity'] : $oldItem->quantity;
+                
+                $this->productRepo->adjustStock($productId, $quantity);
+                error_log("Restored stock: product_id={$productId}, quantity={$quantity}");
             }
             
             // Xóa tất cả items cũ
@@ -432,8 +436,12 @@ class OrderService {
         try {
             // Hoàn lại stock cho từng item
             foreach ($order->items as $item) {
-                $this->productRepo->adjustStock($item['product_id'], $item['quantity']);
-                error_log("Restored stock on cancel: product_id={$item['product_id']}, quantity={$item['quantity']}");
+                // OrderItem có thể là object hoặc array
+                $productId = is_array($item) ? $item['product_id'] : $item->product_id;
+                $quantity = is_array($item) ? $item['quantity'] : $item->quantity;
+                
+                $this->productRepo->adjustStock($productId, $quantity);
+                error_log("Restored stock on cancel: product_id={$productId}, quantity={$quantity}");
             }
             
             // Revert voucher nếu có
