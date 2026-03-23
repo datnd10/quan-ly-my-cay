@@ -142,8 +142,8 @@ class VoucherRepository {
             $data['status'] ?? 1
         ];
         
-        $this->db->execute($sql, $params);
-        $id = $this->db->lastInsertId();
+        $this->db->query($sql, $params);
+        $id = $this->db->getConnection()->lastInsertId();
         
         return $this->findById($id);
     }
@@ -207,7 +207,7 @@ class VoucherRepository {
         $params[] = $id;
         $sql = "UPDATE vouchers SET " . implode(', ', $fields) . " WHERE id = ?";
         
-        $this->db->execute($sql, $params);
+        $this->db->query($sql, $params);
         
         return $this->findById($id);
     }
@@ -217,7 +217,8 @@ class VoucherRepository {
      */
     public function delete($id) {
         $sql = "DELETE FROM vouchers WHERE id = ?";
-        return $this->db->execute($sql, [$id]);
+        $stmt = $this->db->query($sql, [$id]);
+        return $stmt->rowCount();
     }
     
     /**
@@ -225,7 +226,8 @@ class VoucherRepository {
      */
     public function incrementUsedCount($id) {
         $sql = "UPDATE vouchers SET used_count = used_count + 1 WHERE id = ?";
-        return $this->db->execute($sql, [$id]);
+        $stmt = $this->db->query($sql, [$id]);
+        return $stmt->rowCount();
     }
     
     /**
@@ -233,7 +235,8 @@ class VoucherRepository {
      */
     public function decrementUsedCount($id) {
         $sql = "UPDATE vouchers SET used_count = GREATEST(0, used_count - 1) WHERE id = ?";
-        return $this->db->execute($sql, [$id]);
+        $stmt = $this->db->query($sql, [$id]);
+        return $stmt->rowCount();
     }
     
     /**

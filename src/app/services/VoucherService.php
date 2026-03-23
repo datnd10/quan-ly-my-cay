@@ -212,14 +212,26 @@ class VoucherService {
             }
         }
         
-        // Discount value
+        // Discount value - Validate theo discount_type
         if (!$isUpdate || isset($data['discount_value'])) {
             if (!isset($data['discount_value']) || $data['discount_value'] === '') {
                 $errors['discount_value'] = 'Giá trị giảm không được để trống';
             } elseif (!is_numeric($data['discount_value']) || $data['discount_value'] <= 0) {
                 $errors['discount_value'] = 'Giá trị giảm phải là số dương';
-            } elseif (isset($data['discount_type']) && $data['discount_type'] === 'PERCENTAGE' && $data['discount_value'] > 100) {
-                $errors['discount_value'] = 'Giá trị giảm theo % không được vượt quá 100';
+            } else {
+                // Validate theo discount_type
+                $discountType = $data['discount_type'] ?? null;
+                
+                if ($discountType === 'PERCENTAGE') {
+                    if ($data['discount_value'] > 100) {
+                        $errors['discount_value'] = 'Giá trị giảm theo % không được vượt quá 100';
+                    }
+                } elseif ($discountType === 'FIXED') {
+                    // Giảm cố định nên là số nguyên (VND)
+                    if ($data['discount_value'] != floor($data['discount_value'])) {
+                        $errors['discount_value'] = 'Giá trị giảm cố định phải là số nguyên (VND)';
+                    }
+                }
             }
         }
         
@@ -230,9 +242,13 @@ class VoucherService {
             }
         }
         
-        // Max discount
+        // Max discount - Chỉ dùng cho PERCENTAGE
         if (isset($data['max_discount']) && $data['max_discount'] !== null && $data['max_discount'] !== '') {
-            if (!is_numeric($data['max_discount']) || $data['max_discount'] <= 0) {
+            $discountType = $data['discount_type'] ?? null;
+            
+            if ($discountType === 'FIXED') {
+                $errors['max_discount'] = 'Giảm tối đa chỉ áp dụng cho loại PERCENTAGE';
+            } elseif (!is_numeric($data['max_discount']) || $data['max_discount'] <= 0) {
                 $errors['max_discount'] = 'Giảm tối đa phải là số dương';
             }
         }
