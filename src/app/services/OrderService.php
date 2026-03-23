@@ -135,6 +135,11 @@ class OrderService {
                         continue;
                     }
                     
+                    // Kiểm tra tồn kho
+                    if ($product->stock_quantity < $item['quantity']) {
+                        throw new Exception("Sản phẩm '{$product->name}' không đủ số lượng (còn {$product->stock_quantity})");
+                    }
+                    
                     error_log("Adding item: product_id={$item['product_id']}, quantity={$item['quantity']}, price={$product->price}");
                     
                     $this->orderRepo->addItem(
@@ -143,6 +148,10 @@ class OrderService {
                         $item['quantity'],
                         $product->price
                     );
+                    
+                    // Trừ stock ngay khi thêm item
+                    $this->productRepo->adjustStock($item['product_id'], -$item['quantity']);
+                    error_log("Deducted stock: product_id={$item['product_id']}, quantity={$item['quantity']}");
                 }
                 
                 // Recalculate
@@ -210,20 +219,34 @@ class OrderService {
                 throw new Exception("Không tìm thấy sản phẩm ID: $productId");
             }
             
-            if ($product->status !== 'ACTIVE') {
-                throw new Exception("Sản phẩm '{$product->name}' không khả dụng");
-            }
             
             $products[$productId] = $product;
         }
         
+        // Validate stock cho từng item
+        foreach ($items as $item) {
+            $product = $products[$item['product_id']];
+            
+            if ($product->stock_quantity < $item['quantity']) {
+                throw new Exception("Sản phẩm '{$product->name}' không đủ số lượng (còn {$product->stock_quantity})");
+            }
+        }
         $this->db->beginTransaction();
         
         try {
+            // Lấy items cũ để hoàn lại stock
+            $oldItems = $order->items;
+            
+            // Hoàn lại stock của items cũ
+            foreach ($oldItems as $oldItem) {
+                $this->productRepo->adjustStock($oldItem['product_id'], $oldItem['quantity']);
+                error_log("Restored stock: product_id={$oldItem['product_id']}, quantity={$oldItem['quantity']}");
+            }
+            
             // Xóa tất cả items cũ
             $this->orderRepo->deleteAllItems($orderId);
             
-            // Thêm items mới
+            // Thêm items mới và trừ stock
             foreach ($items as $item) {
                 $product = $products[$item['product_id']];
                 
@@ -233,6 +256,10 @@ class OrderService {
                     $item['quantity'],
                     $product->price
                 );
+                
+                // Trừ stock mới
+                $this->productRepo->adjustStock($item['product_id'], -$item['quantity']);
+                error_log("Deducted stock: product_id={$item['product_id']}, quantity={$item['quantity']}");
             }
             
             // Recalculate order totals
@@ -356,6 +383,8 @@ class OrderService {
         $this->db->beginTransaction();
         
         try {
+            // Stock đã được trừ khi tạo order (ACTIVE), không cần trừ lại
+            
             // Update status và payment info
             $this->orderRepo->updateStatus($orderId, Order::STATUS_COMPLETED);
             
@@ -401,6 +430,12 @@ class OrderService {
         $this->db->beginTransaction();
         
         try {
+            // Hoàn lại stock cho từng item
+            foreach ($order->items as $item) {
+                $this->productRepo->adjustStock($item['product_id'], $item['quantity']);
+                error_log("Restored stock on cancel: product_id={$item['product_id']}, quantity={$item['quantity']}");
+            }
+            
             // Revert voucher nếu có
             if ($order->voucher_id) {
                 $this->voucherService->revertVoucher($order->voucher_id);
