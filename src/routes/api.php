@@ -175,6 +175,15 @@ $router->put('vouchers/{id}', 'VoucherController@update'); // Admin only
 $router->delete('vouchers/{id}', 'VoucherController@destroy'); // Admin only
 
 // ============================================
+// DASHBOARD ROUTES (Admin/Staff)
+// ============================================
+$router->get('dashboard/overview', 'DashboardController@overview');
+$router->get('dashboard/revenue-chart', 'DashboardController@revenueChart');
+$router->get('dashboard/customer-stats', 'DashboardController@customerStats');
+$router->get('dashboard/product-stats', 'DashboardController@productStats');
+$router->get('dashboard/voucher-stats', 'DashboardController@voucherStats');
+
+// ============================================
 // ORDER ROUTES
 // ============================================
 $router->get('orders', 'OrderController@index');

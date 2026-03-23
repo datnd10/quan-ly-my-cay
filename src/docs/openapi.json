@@ -32,7 +32,8 @@
     {"name": "Products", "description": "Product management"},
     {"name": "Tables", "description": "Table management"},
     {"name": "Vouchers", "description": "Voucher management"},
-    {"name": "Orders", "description": "Order management"}
+    {"name": "Orders", "description": "Order management"},
+    {"name": "Dashboard", "description": "Dashboard statistics (Admin/Staff)"}
   ],
   "paths": {
     "/auth/login": {
@@ -1470,6 +1471,367 @@
         },
         "responses": {
           "200": {"description": "Hủy đơn hàng thành công"}
+        }
+      }
+    },
+    "/dashboard/overview": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Tổng quan dashboard",
+        "description": "Lấy thống kê tổng quan: Doanh thu, đơn hàng, khách hàng, top sản phẩm, trạng thái bàn. So sánh với kỳ trước.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["today", "week", "month", "year"],
+              "default": "month"
+            },
+            "description": "Khoảng thời gian thống kê"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "period": {"type": "string", "example": "month"},
+                        "date_range": {
+                          "type": "object",
+                          "properties": {
+                            "from": {"type": "string", "example": "2026-03-01 00:00:00"},
+                            "to": {"type": "string", "example": "2026-03-31 23:59:59"}
+                          }
+                        },
+                        "revenue": {
+                          "type": "object",
+                          "properties": {
+                            "current": {"type": "number", "example": 15000000},
+                            "previous": {"type": "number", "example": 12500000},
+                            "change_percent": {"type": "number", "example": 20.0}
+                          }
+                        },
+                        "orders": {
+                          "type": "object",
+                          "properties": {
+                            "current": {"type": "integer", "example": 45633},
+                            "previous": {"type": "integer", "example": 41485},
+                            "change_percent": {"type": "number", "example": 10.0}
+                          }
+                        },
+                        "customers": {
+                          "type": "object",
+                          "properties": {
+                            "current": {"type": "integer", "example": 95741},
+                            "previous": {"type": "integer", "example": 91182},
+                            "change_percent": {"type": "number", "example": 5.0}
+                          }
+                        },
+                        "top_products": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer"},
+                              "name": {"type": "string"},
+                              "price": {"type": "number"},
+                              "category_name": {"type": "string"},
+                              "total_sold": {"type": "integer"},
+                              "revenue": {"type": "number"}
+                            }
+                          }
+                        },
+                        "table_status": {
+                          "type": "object",
+                          "properties": {
+                            "AVAILABLE": {"type": "integer", "example": 10},
+                            "OCCUPIED": {"type": "integer", "example": 5},
+                            "RESERVED": {"type": "integer", "example": 2},
+                            "MAINTENANCE": {"type": "integer", "example": 1}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/revenue-chart": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Biểu đồ doanh thu",
+        "description": "Lấy dữ liệu biểu đồ doanh thu theo ngày/tuần/tháng",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["week", "month", "year"],
+              "default": "month"
+            },
+            "description": "Khoảng thời gian"
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["day", "week", "month"],
+              "default": "day"
+            },
+            "description": "Nhóm dữ liệu theo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "period": {"type": "string"},
+                        "group_by": {"type": "string"},
+                        "date_range": {"type": "object"},
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": {"type": "string", "example": "2026-03-01"},
+                              "order_count": {"type": "integer", "example": 150},
+                              "revenue": {"type": "number", "example": 450000}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/customer-stats": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Thống kê khách hàng",
+        "description": "Thống kê khách hàng mới, khách quay lại, top khách hàng theo điểm",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["today", "week", "month", "year"],
+              "default": "month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "period": {"type": "string"},
+                        "date_range": {"type": "object"},
+                        "new_customers": {"type": "integer", "example": 1250, "description": "Số khách hàng mới"},
+                        "returning_customers": {"type": "integer", "example": 850, "description": "Số khách quay lại (có > 1 đơn)"},
+                        "top_customers": {
+                          "type": "array",
+                          "description": "Top 10 khách hàng theo điểm",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer"},
+                              "name": {"type": "string"},
+                              "phone": {"type": "string"},
+                              "points": {"type": "integer"},
+                              "order_count": {"type": "integer"},
+                              "total_spent": {"type": "number"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/product-stats": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Thống kê sản phẩm",
+        "description": "Thống kê sản phẩm bán chạy, tồn kho thấp, doanh thu theo danh mục",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["today", "week", "month", "year"],
+              "default": "month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "period": {"type": "string"},
+                        "date_range": {"type": "object"},
+                        "top_products": {
+                          "type": "array",
+                          "description": "Top 10 sản phẩm bán chạy",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer"},
+                              "name": {"type": "string"},
+                              "price": {"type": "number"},
+                              "category_name": {"type": "string"},
+                              "total_sold": {"type": "integer"},
+                              "revenue": {"type": "number"}
+                            }
+                          }
+                        },
+                        "low_stock": {
+                          "type": "array",
+                          "description": "Sản phẩm tồn kho thấp (stock <= min_stock)",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer"},
+                              "name": {"type": "string"},
+                              "stock_quantity": {"type": "integer"},
+                              "min_stock": {"type": "integer"},
+                              "category_name": {"type": "string"}
+                            }
+                          }
+                        },
+                        "category_stats": {
+                          "type": "array",
+                          "description": "Thống kê theo danh mục",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "category": {"type": "string"},
+                              "product_count": {"type": "integer"},
+                              "total_sold": {"type": "integer"},
+                              "revenue": {"type": "number"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/voucher-stats": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Thống kê voucher",
+        "description": "Thống kê voucher được sử dụng nhiều nhất, tổng giảm giá",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["today", "week", "month", "year"],
+              "default": "month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "period": {"type": "string"},
+                        "date_range": {"type": "object"},
+                        "vouchers": {
+                          "type": "array",
+                          "description": "Top 10 voucher được dùng nhiều nhất",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer"},
+                              "code": {"type": "string"},
+                              "discount_type": {"type": "string"},
+                              "discount_value": {"type": "number"},
+                              "usage_count": {"type": "integer", "description": "Số lần được sử dụng"},
+                              "total_discount": {"type": "number", "description": "Tổng số tiền đã giảm"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
