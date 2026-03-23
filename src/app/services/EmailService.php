@@ -6,7 +6,9 @@ use PHPMailer\PHPMailer\Exception as PHPMailerException;
 /**
  * Email Service
  * 
- * Gửi email sử dụng PHPMailer với SMTP
+ * Hỗ trợ 2 phương thức gửi email:
+ * 1. Resend API (ưu tiên) - Không bị Railway block port
+ * 2. SMTP (fallback) - SendGrid, Mailgun, AWS SES
  */
 
 class EmailService {
@@ -76,36 +78,72 @@ class EmailService {
     }
     
     /**
-     * Gửi email
+     * Gửi email qua Resend API (không dùng SMTP)
      */
-    private function send($to, $subject, $message) {
-        error_log("EmailService->send() called for: {$to}");
-        error_log("MAIL_ENABLED: " . ($this->enabled ? 'true' : 'false'));
+    private function sendViaResendAPI($to, $subject, $message) {
+        $apiKey = getenv('RESEND_API_KEY');
         
-        // Kiểm tra có bật gửi email thật không
-        if (!$this->enabled) {
-            // Chế độ development: chỉ log, không gửi thật
-            error_log("=== EMAIL DEBUG (Development Mode) ===");
-            error_log("To: {$to}");
-            error_log("Subject: {$subject}");
-            error_log("Message: " . strip_tags($message));
-            error_log("==================");
-            
-            return true; // Giả lập gửi thành công
+        if (empty($apiKey)) {
+            error_log("Resend API key not configured");
+            return false;
         }
         
+        error_log("Sending email via Resend API to: {$to}");
+        $startTime = microtime(true);
+        
+        $data = [
+            'from' => $this->from,
+            'to' => [$to],
+            'subject' => $subject,
+            'html' => $message
+        ];
+        
+        $ch = curl_init('https://api.resend.com/emails');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $apiKey,
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        
+        $duration = round(microtime(true) - $startTime, 2);
+        
+        if ($httpCode === 200) {
+            error_log("✅ Email sent via Resend API successfully in {$duration}s");
+            error_log("Response: " . $response);
+            return true;
+        } else {
+            error_log("❌ Resend API failed after {$duration}s (HTTP {$httpCode})");
+            error_log("Response: " . $response);
+            if ($error) {
+                error_log("cURL Error: " . $error);
+            }
+            return false;
+        }
+    }
+    
+    /**
+     * Gửi email qua SMTP (SendGrid, Mailgun, AWS SES)
+     */
+    private function sendViaSMTP($to, $subject, $message) {
         // Kiểm tra SMTP config
         if (empty($this->smtpHost) || empty($this->smtpUser) || empty($this->smtpPass)) {
             error_log("SMTP not configured properly:");
             error_log("  Host: " . ($this->smtpHost ?: 'EMPTY'));
             error_log("  User: " . ($this->smtpUser ?: 'EMPTY'));
             error_log("  Pass: " . (empty($this->smtpPass) ? 'EMPTY' : 'SET'));
-            error_log("Email not sent to: {$to}");
-            // Không throw exception để không block flow
-            return true;
+            return false;
         }
         
-        error_log("Attempting to send email via SMTP to: {$to}");
+        error_log("Sending email via SMTP to: {$to}");
+        $startTime = microtime(true);
         
         try {
             $mail = new PHPMailer(true);
@@ -127,10 +165,11 @@ class EmailService {
             $mail->Port = $this->smtpPort;
             $mail->CharSet = 'UTF-8';
             
-            // Timeout settings để tránh treo - QUAN TRỌNG!
-            $mail->Timeout = 5; // Giảm xuống 5 giây
-            $mail->SMTPDebug = 0; // Tắt debug output
-            $mail->SMTPKeepAlive = false; // Không giữ connection
+            // Timeout settings
+            $mail->Timeout = 10;
+            $mail->SMTPDebug = 0;
+            $mail->SMTPKeepAlive = false;
+            $mail->SMTPAutoTLS = true;
             $mail->SMTPOptions = [
                 'ssl' => [
                     'verify_peer' => false,
@@ -149,24 +188,51 @@ class EmailService {
             $mail->Body = $message;
             $mail->AltBody = strip_tags($message);
             
-            error_log("Sending email...");
-            $startTime = microtime(true);
-            
             $mail->send();
             
             $duration = round(microtime(true) - $startTime, 2);
-            error_log("Email sent successfully to: {$to} in {$duration}s");
+            error_log("✅ Email sent via SMTP successfully in {$duration}s");
             return true;
             
         } catch (PHPMailerException $e) {
             $duration = round(microtime(true) - $startTime, 2);
-            error_log("Email send failed after {$duration}s: " . $e->getMessage());
-            // Không throw exception để không block flow
+            error_log("❌ SMTP send failed after {$duration}s: " . $e->getMessage());
             return false;
         } catch (Exception $e) {
-            error_log("Email send error: " . $e->getMessage());
+            $duration = round(microtime(true) - $startTime, 2);
+            error_log("❌ SMTP error after {$duration}s: " . $e->getMessage());
             return false;
         }
+    }
+    
+    /**
+     * Gửi email (auto-select phương thức tốt nhất)
+     */
+    private function send($to, $subject, $message) {
+        error_log("EmailService->send() called for: {$to}");
+        error_log("MAIL_ENABLED: " . ($this->enabled ? 'true' : 'false'));
+        
+        // Kiểm tra có bật gửi email thật không
+        if (!$this->enabled) {
+            // Chế độ development: chỉ log, không gửi thật
+            error_log("=== EMAIL DEBUG (Development Mode) ===");
+            error_log("To: {$to}");
+            error_log("Subject: {$subject}");
+            error_log("Message: " . strip_tags($message));
+            error_log("==================");
+            
+            return true; // Giả lập gửi thành công
+        }
+        
+        // Ưu tiên 1: Resend API (không bị Railway block port)
+        if (getenv('RESEND_API_KEY')) {
+            error_log("📧 Using Resend API for email delivery");
+            return $this->sendViaResendAPI($to, $subject, $message);
+        }
+        
+        // Ưu tiên 2: SMTP (SendGrid, Mailgun, AWS SES)
+        error_log("📧 Using SMTP for email delivery");
+        return $this->sendViaSMTP($to, $subject, $message);
     }
     
     /**

@@ -218,6 +218,15 @@ class AuthService {
      * Quên mật khẩu - Gửi mật khẩu mới qua email
      */
     public function forgotPassword($phone) {
+        // Validate phone format
+        if (empty($phone)) {
+            throw new Exception('Số điện thoại không được để trống');
+        }
+        
+        if (!preg_match(REGEX_PHONE, $phone)) {
+            throw new Exception('Số điện thoại không hợp lệ');
+        }
+        
         // Tìm user theo phone (username)
         $user = $this->userRepo->findByUsername($phone);
         
@@ -225,10 +234,20 @@ class AuthService {
             throw new Exception('Số điện thoại không tồn tại trong hệ thống');
         }
         
+        // Chỉ cho phép Customer reset password qua API này
+        // Admin/Staff phải liên hệ admin khác để reset
+        if ($user['role'] !== ROLE_CUSTOMER) {
+            throw new Exception('Tài khoản Admin/Staff không thể reset password qua API này. Vui lòng liên hệ quản trị viên.');
+        }
+        
         // Lấy thông tin customer để có email
         $customer = $this->customerRepo->findByUserId($user['id']);
         
-        if (!$customer || empty($customer['email'])) {
+        if (!$customer) {
+            throw new Exception('Không tìm thấy thông tin khách hàng');
+        }
+        
+        if (empty($customer['email'])) {
             throw new Exception('Tài khoản chưa có email. Vui lòng liên hệ admin để được hỗ trợ.');
         }
         
@@ -241,15 +260,32 @@ class AuthService {
         ]);
         
         // Gửi email (nếu fail thì vẫn giữ password mới)
-        $this->emailService->sendResetPassword(
-            $customer['email'],
-            $customer['name'],
-            $newPassword
-        );
+        $emailSent = false;
+        try {
+            $emailSent = $this->emailService->sendResetPassword(
+                $customer['email'],
+                $customer['name'],
+                $newPassword
+            );
+            
+            if ($emailSent) {
+                error_log("Reset password email sent successfully to: " . $customer['email']);
+            } else {
+                error_log("Reset password email failed to send to: " . $customer['email']);
+            }
+        } catch (Exception $e) {
+            // Log error nhưng không throw để user vẫn nhận được password
+            error_log("Failed to send reset password email: " . $e->getMessage());
+        }
         
         return [
+            'success' => true,
+            'message' => $emailSent 
+                ? 'Mật khẩu mới đã được gửi đến email của bạn' 
+                : 'Đã tạo mật khẩu mới. Do lỗi hệ thống email, vui lòng liên hệ admin để nhận mật khẩu.',
             'email' => $this->maskEmail($customer['email']),
-            'new_password' => $newPassword // Trả về password để test (production nên xóa)
+            'email_sent' => $emailSent,
+            'new_password' => $newPassword // TODO: Xóa field này trong production (chỉ để test)
         ];
     }
     
