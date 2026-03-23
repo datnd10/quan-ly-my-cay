@@ -78,6 +78,50 @@ class EmailService {
     }
     
     /**
+     * Gửi email qua PHP mail() function (dùng mail server của hosting)
+     */
+    private function sendViaPhpMail($to, $subject, $message) {
+        error_log("Sending email via PHP mail() to: {$to}");
+        $startTime = microtime(true);
+        
+        try {
+            $mail = new PHPMailer(false); // false = không dùng exceptions
+            
+            // Dùng PHP mail() thay vì SMTP
+            $mail->isMail();
+            
+            $mail->CharSet = 'UTF-8';
+            
+            // Sender & recipient
+            $mail->setFrom($this->from, $this->fromName);
+            $mail->addAddress($to);
+            
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body = $message;
+            $mail->AltBody = strip_tags($message);
+            
+            $result = $mail->send();
+            
+            $duration = round(microtime(true) - $startTime, 2);
+            
+            if ($result) {
+                error_log("✅ Email sent via PHP mail() successfully in {$duration}s");
+                return true;
+            } else {
+                error_log("❌ PHP mail() failed after {$duration}s: " . $mail->ErrorInfo);
+                return false;
+            }
+            
+        } catch (Exception $e) {
+            $duration = round(microtime(true) - $startTime, 2);
+            error_log("❌ PHP mail() error after {$duration}s: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * Gửi email qua Resend API (không dùng SMTP)
      */
     private function sendViaResendAPI($to, $subject, $message) {
@@ -230,7 +274,13 @@ class EmailService {
             return $this->sendViaResendAPI($to, $subject, $message);
         }
         
-        // Ưu tiên 2: SMTP (SendGrid, Mailgun, AWS SES)
+        // Ưu tiên 2: PHP mail() function (dùng mail server của hosting)
+        if (getenv('USE_PHP_MAIL') === 'true') {
+            error_log("📧 Using PHP mail() for email delivery");
+            return $this->sendViaPhpMail($to, $subject, $message);
+        }
+        
+        // Ưu tiên 3: SMTP (SendGrid, Mailgun, AWS SES, Brevo)
         error_log("📧 Using SMTP for email delivery");
         return $this->sendViaSMTP($to, $subject, $message);
     }
