@@ -50,10 +50,32 @@ class ProductRepository {
             $sql .= " AND p.stock_quantity <= p.min_stock";
         }
         
-        // Đếm tổng số
-        $countSql = preg_replace('/SELECT .+ FROM/', 'SELECT COUNT(*) as total FROM', $sql);
-        $countResult = $this->db->fetchOne($countSql, $params);
-        $total = $countResult ? $countResult['total'] : 0;
+        // Đếm tổng số - Sử dụng subquery để đảm bảo đúng
+        $countSql = "SELECT COUNT(*) as total FROM products p WHERE 1=1";
+        $countParams = [];
+        
+        // Áp dụng lại các filter cho count query
+        if (!empty($filters['category_id'])) {
+            $countSql .= " AND p.category_id = ?";
+            $countParams[] = $filters['category_id'];
+        }
+        
+        if (isset($filters['status'])) {
+            $countSql .= " AND p.status = ?";
+            $countParams[] = $filters['status'];
+        }
+        
+        if (!empty($filters['search'])) {
+            $countSql .= " AND p.name LIKE ?";
+            $countParams[] = '%' . $filters['search'] . '%';
+        }
+        
+        if (!empty($filters['low_stock'])) {
+            $countSql .= " AND p.stock_quantity <= p.min_stock";
+        }
+        
+        $countResult = $this->db->fetchOne($countSql, $countParams);
+        $total = $countResult && isset($countResult['total']) ? (int)$countResult['total'] : 0;
         
         // Lấy data với phân trang
         $sql .= " ORDER BY p.created_at DESC LIMIT ? OFFSET ?";

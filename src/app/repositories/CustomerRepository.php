@@ -81,7 +81,7 @@ class CustomerRepository {
         }
         
         $result = $this->db->fetchOne($sql, $params);
-        return $result ? (int)$result['total'] : 0;
+        return $result && isset($result['total']) ? (int)$result['total'] : 0;
     }
     
     /**

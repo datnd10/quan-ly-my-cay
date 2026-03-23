@@ -72,9 +72,27 @@ class TableRepository {
         }
         
         // Đếm tổng số
-        $countSql = preg_replace('/SELECT .+ FROM/', 'SELECT COUNT(*) as total FROM', $sql);
-        $countResult = $this->db->fetchOne($countSql, $params);
-        $total = $countResult ? $countResult['total'] : 0;
+        $countSql = "SELECT COUNT(*) as total FROM tables WHERE 1=1";
+        $countParams = [];
+        
+        // Áp dụng lại các filter cho count query
+        if (!empty($filters['status'])) {
+            $countSql .= " AND status = ?";
+            $countParams[] = $filters['status'];
+        }
+        
+        if (!empty($filters['min_capacity'])) {
+            $countSql .= " AND capacity >= ?";
+            $countParams[] = $filters['min_capacity'];
+        }
+        
+        if (!empty($filters['search'])) {
+            $countSql .= " AND table_number LIKE ?";
+            $countParams[] = '%' . $filters['search'] . '%';
+        }
+        
+        $countResult = $this->db->fetchOne($countSql, $countParams);
+        $total = $countResult && isset($countResult['total']) ? (int)$countResult['total'] : 0;
         
         // Lấy data với phân trang
         $sql .= " ORDER BY table_number ASC LIMIT ? OFFSET ?";

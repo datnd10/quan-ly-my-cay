@@ -163,6 +163,17 @@ $router->put('tables/{id}/status', 'TableController@updateStatus');
 $router->delete('tables/{id}', 'TableController@destroy');
 
 // ============================================
+// VOUCHER ROUTES
+// ============================================
+$router->get('vouchers/available', 'VoucherController@available'); // Public - voucher available
+$router->post('vouchers/validate', 'VoucherController@validateVoucher'); // Public - validate voucher
+$router->get('vouchers', 'VoucherController@index'); // Admin/Staff
+$router->get('vouchers/{id}', 'VoucherController@show'); // Admin/Staff
+$router->post('vouchers', 'VoucherController@store'); // Admin only
+$router->put('vouchers/{id}', 'VoucherController@update'); // Admin only
+$router->delete('vouchers/{id}', 'VoucherController@destroy'); // Admin only
+
+// ============================================
 // USER ROUTES (Admin only)
 // ============================================
 $router->get('users', 'UserController@index');

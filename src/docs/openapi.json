@@ -30,7 +30,8 @@
     {"name": "Customers", "description": "Customer management"},
     {"name": "Categories", "description": "Category management"},
     {"name": "Products", "description": "Product management"},
-    {"name": "Tables", "description": "Table management"}
+    {"name": "Tables", "description": "Table management"},
+    {"name": "Vouchers", "description": "Voucher management"}
   ],
   "paths": {
     "/auth/login": {
@@ -938,6 +939,205 @@
         },
         "responses": {
           "200": {"description": "Cập nhật trạng thái thành công"}
+        }
+      }
+    },
+    "/vouchers": {
+      "get": {
+        "tags": ["Vouchers"],
+        "summary": "Danh sách vouchers (Admin/Staff)",
+        "description": "Admin/Staff xem tất cả vouchers",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "status", "in": "query", "schema": {"type": "integer", "enum": [0, 1]}},
+          {"name": "discount_type", "in": "query", "schema": {"type": "string", "enum": ["PERCENTAGE", "FIXED"]}},
+          {"name": "search", "in": "query", "schema": {"type": "string"}},
+          {"name": "active_only", "in": "query", "schema": {"type": "integer", "enum": [0, 1]}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "post": {
+        "tags": ["Vouchers"],
+        "summary": "Tạo voucher mới",
+        "description": "Admin tạo voucher",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["code", "discount_type", "discount_value"],
+                "properties": {
+                  "code": {"type": "string", "example": "SUMMER2024"},
+                  "discount_type": {"type": "string", "enum": ["PERCENTAGE", "FIXED"]},
+                  "discount_value": {"type": "number", "example": 10},
+                  "min_order_amount": {"type": "number", "example": 50000},
+                  "max_discount": {"type": "number", "example": 100000},
+                  "usage_limit": {"type": "integer", "example": 100},
+                  "start_date": {"type": "string", "format": "date-time"},
+                  "expired_at": {"type": "string", "format": "date-time"},
+                  "status": {"type": "integer", "enum": [0, 1], "default": 1}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Tạo voucher thành công"}
+        }
+      }
+    },
+    "/vouchers/available": {
+      "get": {
+        "tags": ["Vouchers"],
+        "summary": "Danh sách vouchers phù hợp",
+        "description": "Public API - Lấy danh sách vouchers phù hợp với tổng đơn hàng (đủ điều kiện min_order_amount). Kết quả sắp xếp theo discount giảm dần.",
+        "parameters": [
+          {"name": "order_amount", "in": "query", "required": true, "schema": {"type": "number"}, "description": "Tổng đơn hàng", "example": 500000},
+          {"name": "discount_type", "in": "query", "schema": {"type": "string", "enum": ["PERCENTAGE", "FIXED"]}, "description": "Lọc theo loại giảm giá"}
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {"type": "integer"},
+                          "code": {"type": "string"},
+                          "discount_type": {"type": "string"},
+                          "discount_value": {"type": "number"},
+                          "min_order_amount": {"type": "number"},
+                          "max_discount": {"type": "number"},
+                          "discount_amount": {"type": "number", "description": "Số tiền giảm thực tế cho đơn này"},
+                          "final_amount": {"type": "number", "description": "Tổng tiền sau khi áp dụng voucher"},
+                          "remaining_uses": {"type": "integer"},
+                          "expired_at": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vouchers/validate": {
+      "post": {
+        "tags": ["Vouchers"],
+        "summary": "Validate voucher",
+        "description": "Public API - Kiểm tra voucher có hợp lệ không và tính discount",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["code", "order_amount"],
+                "properties": {
+                  "code": {"type": "string", "example": "SUMMER2024"},
+                  "order_amount": {"type": "number", "example": 500000}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Voucher hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "message": {"type": "string"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "valid": {"type": "boolean"},
+                        "voucher": {"type": "object"},
+                        "discount": {"type": "number"},
+                        "final_amount": {"type": "number"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vouchers/{id}": {
+      "get": {
+        "tags": ["Vouchers"],
+        "summary": "Chi tiết voucher",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "put": {
+        "tags": ["Vouchers"],
+        "summary": "Cập nhật voucher",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {"type": "string"},
+                  "discount_type": {"type": "string", "enum": ["PERCENTAGE", "FIXED"]},
+                  "discount_value": {"type": "number"},
+                  "min_order_amount": {"type": "number"},
+                  "max_discount": {"type": "number"},
+                  "usage_limit": {"type": "integer"},
+                  "start_date": {"type": "string", "format": "date-time"},
+                  "expired_at": {"type": "string", "format": "date-time"},
+                  "status": {"type": "integer", "enum": [0, 1]}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật thành công"}
+        }
+      },
+      "delete": {
+        "tags": ["Vouchers"],
+        "summary": "Xóa voucher",
+        "description": "Admin only",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Xóa thành công"}
         }
       }
     }

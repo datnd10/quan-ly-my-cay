@@ -100,15 +100,18 @@ CREATE TABLE orders (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     customer_id BIGINT,
     table_id BIGINT,
+    voucher_id BIGINT COMMENT 'Voucher đã áp dụng (nếu có)',
+    voucher_discount DECIMAL(12,2) DEFAULT 0 COMMENT 'Số tiền giảm từ voucher',
     status VARCHAR(20) DEFAULT 'PENDING',
-    total_amount DECIMAL(12,2) DEFAULT 0,
-    discount_amount DECIMAL(12,2) DEFAULT 0,
-    final_amount DECIMAL(12,2) DEFAULT 0,
+    total_amount DECIMAL(12,2) DEFAULT 0 COMMENT 'Tổng tiền trước giảm giá',
+    discount_amount DECIMAL(12,2) DEFAULT 0 COMMENT 'Tổng giảm giá (voucher + khác)',
+    final_amount DECIMAL(12,2) DEFAULT 0 COMMENT 'Tổng tiền sau giảm giá',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP NULL,
     paid_at TIMESTAMP NULL,
     FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
-    FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE SET NULL
+    FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE SET NULL,
+    FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE SET NULL
 );
 
 -- =========================
@@ -161,26 +164,16 @@ CREATE TABLE payments (
 CREATE TABLE vouchers (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
-    discount_type VARCHAR(20) NOT NULL,
-    discount_value DECIMAL(10,2) NOT NULL,
-    min_order_amount DECIMAL(12,2) DEFAULT 0,
-    max_discount DECIMAL(12,2),
-    usage_limit INT DEFAULT 1,
-    used_count INT DEFAULT 0,
-    start_date DATETIME,
-    expired_at DATETIME,
-    status TINYINT DEFAULT 1,
+    discount_type VARCHAR(20) NOT NULL COMMENT 'PERCENTAGE hoặc FIXED',
+    discount_value DECIMAL(10,2) NOT NULL COMMENT 'Giá trị giảm (% hoặc VND)',
+    min_order_amount DECIMAL(12,2) DEFAULT 0 COMMENT 'Đơn tối thiểu',
+    max_discount DECIMAL(12,2) COMMENT 'Giảm tối đa (cho PERCENTAGE)',
+    usage_limit INT DEFAULT 1 COMMENT 'Số lần dùng tối đa',
+    used_count INT DEFAULT 0 COMMENT 'Đã dùng bao nhiêu lần',
+    start_date DATETIME COMMENT 'Ngày bắt đầu hiệu lực',
+    expired_at DATETIME COMMENT 'Ngày hết hạn',
+    status TINYINT DEFAULT 1 COMMENT '1=active, 0=inactive',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE order_vouchers (
-    order_id BIGINT,
-    voucher_id BIGINT,
-    discount_applied DECIMAL(12,2),
-    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (order_id, voucher_id),
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE
 );
 
 -- =========================
@@ -199,23 +192,6 @@ CREATE TABLE loyalty_transactions (
 );
 
 -- =========================
--- RESERVATIONS
--- =========================
-CREATE TABLE reservations (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    customer_id BIGINT,
-    table_id BIGINT,
-    reservation_time DATETIME NOT NULL,
-    guest_count INT,
-    status VARCHAR(20) DEFAULT 'PENDING',
-    note TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
-    FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE SET NULL
-);
-
--- =========================
 -- INDEXES (CẢI TIẾN)
 -- =========================
 -- Orders indexes
@@ -225,6 +201,7 @@ CREATE INDEX idx_order_status ON orders(status);
 CREATE INDEX idx_order_created_at ON orders(created_at);
 CREATE INDEX idx_order_completed_at ON orders(completed_at);
 CREATE INDEX idx_order_paid_at ON orders(paid_at);
+CREATE INDEX idx_order_voucher ON orders(voucher_id);
 
 -- Order status history indexes
 CREATE INDEX idx_order_status_history_order ON order_status_history(order_id);
