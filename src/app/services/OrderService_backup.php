@@ -321,13 +321,12 @@ class OrderService {
         $this->db->beginTransaction();
         
         try {
-            // Update status và payment info
+            // Update status
             $this->orderRepo->updateStatus($orderId, Order::STATUS_COMPLETED);
             
+            // Set paid_at
             $this->orderRepo->update($orderId, [
-                'payment_method' => $paymentData['payment_method'] ?? 'CASH',
-                'payment_at' => date('Y-m-d H:i:s'),
-                'completed_at' => date('Y-m-d H:i:s')
+                'paid_at' => date('Y-m-d H:i:s')
             ]);
             
             // Cộng điểm cho customer (nếu có)

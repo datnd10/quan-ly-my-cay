@@ -190,10 +190,8 @@ $router->post('orders/{id}/voucher', 'OrderController@applyVoucher');
 $router->delete('orders/{id}/voucher', 'OrderController@removeVoucher');
 
 // Order actions
-$router->post('orders/{id}/confirm', 'OrderController@confirm');
-$router->put('orders/{id}/status', 'OrderController@updateStatus');
+$router->post('orders/{id}/payment', 'OrderController@payment');
 $router->post('orders/{id}/cancel', 'OrderController@cancel');
-$router->get('orders/{id}/history', 'OrderController@history');
 
 // ============================================
 // USER ROUTES (Admin only)

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Order Controller
+ * Order Controller - SIMPLIFIED
  * 
  * Xử lý HTTP requests cho orders
  */
@@ -21,11 +21,9 @@ class OrderController extends Controller {
         try {
             $user = $this->auth();
             
-            // Get query params
             $page = max(1, (int)$this->getQuery('page', 1));
             $perPage = min(100, max(1, (int)$this->getQuery('per_page', 20)));
             
-            // Filters
             $filters = [];
             
             if ($this->getQuery('status')) {
@@ -48,7 +46,6 @@ class OrderController extends Controller {
             if ($user['role'] === 'CUSTOMER') {
                 $filters['customer_id'] = $user['user_id'];
             } elseif ($this->getQuery('customer_id')) {
-                // Admin/Staff có thể filter theo customer
                 $filters['customer_id'] = $this->getQuery('customer_id');
             }
             
@@ -85,7 +82,7 @@ class OrderController extends Controller {
     
     /**
      * POST /orders
-     * Tạo order mới
+     * Tạo order mới (có thể kèm items)
      */
     public function store() {
         try {
@@ -105,7 +102,6 @@ class OrderController extends Controller {
     /**
      * PUT /orders/{id}/items
      * Update items của order (thêm/sửa/xóa tất cả trong 1 API)
-     * Body: {"items": [{"product_id": 10, "quantity": 2}, ...]}
      */
     public function updateItems($id) {
         try {
@@ -165,41 +161,18 @@ class OrderController extends Controller {
     }
     
     /**
-     * POST /orders/{id}/confirm
-     * Xác nhận đơn hàng
+     * POST /orders/{id}/payment
+     * Thanh toán đơn hàng
      */
-    public function confirm($id) {
-        try {
-            $user = $this->requireRole(['ADMIN', 'STAFF']);
-            
-            $order = $this->orderService->confirmOrder($id, $user['user_id']);
-            
-            $this->success($order, 'Xác nhận đơn hàng thành công');
-            
-        } catch (Exception $e) {
-            return $this->handleException($e);
-        }
-    }
-    
-    /**
-     * PUT /orders/{id}/status
-     * Thay đổi trạng thái order
-     */
-    public function updateStatus($id) {
+    public function payment($id) {
         try {
             $user = $this->requireRole(['ADMIN', 'STAFF']);
             
             $data = $this->getBody();
-            $status = $data['status'] ?? '';
-            $note = $data['note'] ?? null;
             
-            if (empty($status)) {
-                return $this->error('Trạng thái không được để trống', 400);
-            }
+            $order = $this->orderService->payOrder($id, $data, $user['user_id']);
             
-            $order = $this->orderService->updateStatus($id, $status, $user['user_id'], $note);
-            
-            $this->success($order, 'Cập nhật trạng thái thành công');
+            $this->success($order, 'Thanh toán thành công');
             
         } catch (Exception $e) {
             return $this->handleException($e);
@@ -245,23 +218,6 @@ class OrderController extends Controller {
             $this->orderService->deleteOrder($id, $user['user_id']);
             
             $this->success(null, 'Xóa đơn hàng thành công');
-            
-        } catch (Exception $e) {
-            return $this->handleException($e);
-        }
-    }
-    
-    /**
-     * GET /orders/{id}/history
-     * Lấy lịch sử thay đổi status
-     */
-    public function history($id) {
-        try {
-            $user = $this->requireRole(['ADMIN', 'STAFF']);
-            
-            $history = $this->orderService->getStatusHistory($id);
-            
-            $this->success($history);
             
         } catch (Exception $e) {
             return $this->handleException($e);

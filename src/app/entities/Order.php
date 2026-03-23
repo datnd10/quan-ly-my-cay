@@ -16,9 +16,10 @@ class Order {
     public $total_amount;
     public $discount_amount;
     public $final_amount;
+    public $payment_method;
+    public $payment_at;
     public $created_at;
     public $completed_at;
-    public $paid_at;
     
     // Relations
     public $items = [];
@@ -27,11 +28,7 @@ class Order {
     public $voucher = null;
     
     // Order statuses
-    const STATUS_DRAFT = 'DRAFT';
-    const STATUS_PENDING = 'PENDING';
-    const STATUS_CONFIRMED = 'CONFIRMED';
-    const STATUS_PREPARING = 'PREPARING';
-    const STATUS_READY = 'READY';
+    const STATUS_ACTIVE = 'ACTIVE';
     const STATUS_COMPLETED = 'COMPLETED';
     const STATUS_CANCELLED = 'CANCELLED';
     
@@ -42,13 +39,14 @@ class Order {
             $this->table_id = $data['table_id'] ?? null;
             $this->voucher_id = $data['voucher_id'] ?? null;
             $this->voucher_discount = $data['voucher_discount'] ?? 0;
-            $this->status = $data['status'] ?? self::STATUS_DRAFT;
+            $this->status = $data['status'] ?? self::STATUS_ACTIVE;
             $this->total_amount = $data['total_amount'] ?? 0;
             $this->discount_amount = $data['discount_amount'] ?? 0;
             $this->final_amount = $data['final_amount'] ?? 0;
+            $this->payment_method = $data['payment_method'] ?? null;
+            $this->payment_at = $data['payment_at'] ?? null;
             $this->created_at = $data['created_at'] ?? null;
             $this->completed_at = $data['completed_at'] ?? null;
-            $this->paid_at = $data['paid_at'] ?? null;
         }
     }
     
@@ -66,9 +64,10 @@ class Order {
             'total_amount' => (float)$this->total_amount,
             'discount_amount' => (float)$this->discount_amount,
             'final_amount' => (float)$this->final_amount,
+            'payment_method' => $this->payment_method,
+            'payment_at' => $this->payment_at,
             'created_at' => $this->created_at,
-            'completed_at' => $this->completed_at,
-            'paid_at' => $this->paid_at
+            'completed_at' => $this->completed_at
         ];
         
         // Include items if loaded
@@ -103,23 +102,23 @@ class Order {
     }
     
     /**
-     * Kiểm tra order có thể sửa không
+     * Kiểm tra order có thể sửa không (gọi thêm món)
      */
     public function canEdit() {
-        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_PENDING]);
+        return $this->status === self::STATUS_ACTIVE;
     }
     
     /**
      * Kiểm tra order có thể hủy không
      */
     public function canCancel() {
-        return !in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_CANCELLED]);
+        return $this->status === self::STATUS_ACTIVE;
     }
     
     /**
-     * Kiểm tra order có thể confirm không
+     * Kiểm tra order có thể thanh toán không
      */
-    public function canConfirm() {
-        return $this->status === self::STATUS_PENDING;
+    public function canPay() {
+        return $this->status === self::STATUS_ACTIVE;
     }
 }

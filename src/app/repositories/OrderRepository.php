@@ -247,7 +247,8 @@ class OrderRepository {
         $params = [':id' => $id];
         
         $allowedFields = ['customer_id', 'table_id', 'voucher_id', 'voucher_discount', 
-                          'status', 'total_amount', 'discount_amount', 'final_amount'];
+                          'status', 'total_amount', 'discount_amount', 'final_amount',
+                          'payment_method', 'payment_at', 'completed_at'];
         
         foreach ($allowedFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -368,32 +369,4 @@ class OrderRepository {
         $this->db->query($sql, [':days' => $days]);
     }
     
-    /**
-     * Lưu lịch sử thay đổi status
-     */
-    public function logStatusChange($orderId, $oldStatus, $newStatus, $changedBy, $note = null) {
-        $sql = "INSERT INTO order_status_history (order_id, old_status, new_status, changed_by, note, created_at)
-                VALUES (:order_id, :old_status, :new_status, :changed_by, :note, NOW())";
-        
-        $this->db->query($sql, [
-            ':order_id' => $orderId,
-            ':old_status' => $oldStatus,
-            ':new_status' => $newStatus,
-            ':changed_by' => $changedBy,
-            ':note' => $note
-        ]);
-    }
-    
-    /**
-     * Lấy lịch sử status của order
-     */
-    public function getStatusHistory($orderId) {
-        $sql = "SELECT h.*, u.username as changed_by_username
-                FROM order_status_history h
-                LEFT JOIN users u ON h.changed_by = u.id
-                WHERE h.order_id = :order_id
-                ORDER BY h.created_at DESC";
-        
-        return $this->db->fetchAll($sql, [':order_id' => $orderId]);
-    }
 }
