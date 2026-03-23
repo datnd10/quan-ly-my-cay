@@ -557,13 +557,19 @@ class OrderService {
             // Cộng điểm
             $customerRepo->updatePoints($order->customer_id, $points);
             
+            // Lấy số dư điểm hiện tại
+            $customer = $customerRepo->findById($order->customer_id);
+            $balanceAfter = $customer ? $customer->points : $points;
+            
             // Log transaction
             $pointRepo->create([
                 'customer_id' => $order->customer_id,
-                'order_id' => $order->id,
-                'type' => 'EARN',
                 'points' => $points,
-                'description' => "Tích điểm từ đơn hàng #$order->id"
+                'type' => 'EARN',
+                'description' => "Tích điểm từ đơn hàng #$order->id",
+                'reference_type' => 'order',
+                'reference_id' => $order->id,
+                'balance_after' => $balanceAfter
             ]);
         }
     }
