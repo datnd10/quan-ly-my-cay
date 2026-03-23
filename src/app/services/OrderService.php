@@ -557,9 +557,13 @@ class OrderService {
             // Cộng điểm
             $customerRepo->updatePoints($order->customer_id, $points);
             
-            // Lấy số dư điểm hiện tại
+            // Lấy số dư điểm SAU KHI đã cộng
             $customer = $customerRepo->findById($order->customer_id);
-            $balanceAfter = $customer ? $customer->points : $points;
+            $balanceAfter = 0;
+            if ($customer) {
+                // findById trả về array
+                $balanceAfter = is_array($customer) ? (int)$customer['points'] : (int)$customer->points;
+            }
             
             // Log transaction
             $pointRepo->create([
