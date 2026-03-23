@@ -1207,7 +1207,7 @@
       "post": {
         "tags": ["Orders"],
         "summary": "Tạo đơn hàng mới",
-        "description": "Staff/Admin tạo đơn mới cho bàn. Có thể tạo kèm items luôn. Bàn sẽ chuyển sang OCCUPIED.",
+        "description": "Staff/Admin tạo đơn mới cho bàn. Customer không cần thiết khi tạo, sẽ thêm khi thanh toán. Bàn sẽ chuyển sang OCCUPIED.",
         "security": [{"bearerAuth": []}],
         "requestBody": {
           "required": true,
@@ -1216,7 +1216,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "customer_id": {"type": "integer", "description": "ID khách hàng (optional)"},
                   "table_id": {"type": "integer", "description": "ID bàn (required)", "example": 1},
                   "items": {
                     "type": "array",
@@ -1248,7 +1247,7 @@
                       "type": "object",
                       "properties": {
                         "id": {"type": "integer"},
-                        "customer_id": {"type": "integer"},
+                        "customer_id": {"type": "integer", "nullable": true, "description": "Null khi tạo, sẽ có giá trị khi thanh toán"},
                         "table_id": {"type": "integer"},
                         "status": {"type": "string", "example": "ACTIVE"},
                         "total_amount": {"type": "number"},
@@ -1483,7 +1482,7 @@
       "post": {
         "tags": ["Orders"],
         "summary": "Thanh toán đơn hàng",
-        "description": "Thanh toán đơn hàng (ACTIVE → COMPLETED). Sẽ cộng điểm cho customer và free bàn.",
+        "description": "Thanh toán đơn hàng (ACTIVE → COMPLETED). Sẽ cộng điểm cho customer và free bàn. Có thể thêm customer_id khi thanh toán để tích điểm.",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
@@ -1500,6 +1499,11 @@
                     "enum": ["CASH", "CARD", "TRANSFER", "MOMO", "ZALOPAY"],
                     "default": "CASH",
                     "example": "CASH"
+                  },
+                  "customer_id": {
+                    "type": "integer",
+                    "description": "ID khách hàng (optional) - Có thể thêm customer khi thanh toán để tích điểm",
+                    "example": 1
                   }
                 }
               }

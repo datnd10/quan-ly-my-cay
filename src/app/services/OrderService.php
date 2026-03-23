@@ -91,13 +91,7 @@ class OrderService {
             }
         }
         
-        // Validate customer
-        if (!empty($data['customer_id'])) {
-            $customer = $this->customerRepo->findById($data['customer_id']);
-            if (!$customer) {
-                throw new Exception('Không tìm thấy khách hàng');
-            }
-        }
+        // Customer không bắt buộc khi tạo order, sẽ thêm khi thanh toán
         
         $this->db->beginTransaction();
         
@@ -384,10 +378,28 @@ class OrderService {
             throw new Exception('Đơn hàng phải có ít nhất 1 món');
         }
         
+        // Validate customer nếu có
+        if (!empty($paymentData['customer_id'])) {
+            $customer = $this->customerRepo->findById($paymentData['customer_id']);
+            if (!$customer) {
+                throw new Exception('Không tìm thấy khách hàng');
+            }
+        }
+        
         $this->db->beginTransaction();
         
         try {
             // Stock đã được trừ khi tạo order (ACTIVE), không cần trừ lại
+            
+            // Thêm customer nếu có (khi thanh toán mới biết khách hàng)
+            if (!empty($paymentData['customer_id'])) {
+                $this->orderRepo->update($orderId, [
+                    'customer_id' => $paymentData['customer_id']
+                ]);
+                
+                // Reload order để có customer_id mới
+                $order = $this->orderRepo->findById($orderId);
+            }
             
             // Update status và payment info
             $this->orderRepo->updateStatus($orderId, Order::STATUS_COMPLETED);
