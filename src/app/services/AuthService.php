@@ -215,7 +215,8 @@ class AuthService {
     }
     
     /**
-     * Quên mật khẩu - Tạo password mới, gửi email, và trả về data
+     * Quên mật khẩu - Tạo password mới và trả về cho FE
+     * FE sẽ tự gửi email hoặc hiển thị cho user
      */
     public function forgotPassword($phone) {
         // Validate phone format
@@ -259,38 +260,15 @@ class AuthService {
             'password' => password_hash($newPassword, PASSWORD_DEFAULT)
         ]);
         
-        // Gửi email (nếu fail thì vẫn trả về password cho FE xử lý)
-        $emailSent = false;
-        try {
-            $emailSent = $this->emailService->sendResetPassword(
-                $customer['email'],
-                $customer['name'],
-                $newPassword
-            );
-            
-            if ($emailSent) {
-                error_log("Reset password email sent successfully to: " . $customer['email']);
-            } else {
-                error_log("Reset password email failed to send to: " . $customer['email']);
-            }
-        } catch (Exception $e) {
-            // Log error nhưng không throw để user vẫn nhận được password
-            error_log("Failed to send reset password email: " . $e->getMessage());
-        }
-        
-        // Trả về đầy đủ thông tin
+        // Trả về thông tin để FE tự xử lý gửi email
         return [
             'success' => true,
-            'message' => $emailSent 
-                ? 'Mật khẩu mới đã được gửi đến email của bạn' 
-                : 'Đã tạo mật khẩu mới. Vui lòng sử dụng mật khẩu dưới đây để đăng nhập.',
-            'email_sent' => $emailSent,
+            'message' => 'Đã tạo mật khẩu mới thành công',
             'data' => [
                 'email' => $customer['email'],
-                'masked_email' => $this->maskEmail($customer['email']),
                 'name' => $customer['name'],
-                'phone' => $customer['phone'],
-                'new_password' => $newPassword // FE có thể dùng nếu email fail
+                'new_password' => $newPassword,
+                'phone' => $customer['phone']
             ]
         ];
     }
