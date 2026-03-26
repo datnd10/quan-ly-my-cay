@@ -122,8 +122,9 @@ $router->get('categories/all', 'CategoryController@all'); // Public - không c�
 $router->get('categories', 'CategoryController@index');
 $router->get('categories/{id}', 'CategoryController@show');
 $router->post('categories', 'CategoryController@store');
+$router->post('categories/{id}/restore', 'CategoryController@restore'); // Khôi phục danh mục đã xóa
 $router->put('categories/{id}', 'CategoryController@update');
-$router->delete('categories/{id}', 'CategoryController@destroy');
+$router->delete('categories/{id}', 'CategoryController@destroy'); // Soft delete
 
 // ============================================
 // PRODUCT ROUTES
@@ -132,9 +133,10 @@ $router->get('products/low-stock', 'ProductController@lowStock');
 $router->get('products', 'ProductController@index');
 $router->get('products/{id}', 'ProductController@show');
 $router->post('products', 'ProductController@store');
+$router->post('products/{id}/restore', 'ProductController@restore'); // Khôi phục sản phẩm đã xóa
 $router->put('products/{id}', 'ProductController@update');
 $router->put('products/{id}/stock', 'ProductController@updateStock');
-$router->delete('products/{id}', 'ProductController@destroy');
+$router->delete('products/{id}', 'ProductController@destroy'); // Soft delete
 
 // ============================================
 // CUSTOMER ROUTES
@@ -159,9 +161,10 @@ $router->get('customers/my-points/history', 'CustomerController@myPointHistory')
 $router->get('tables', 'TableController@index');
 $router->get('tables/{id}', 'TableController@show');
 $router->post('tables', 'TableController@store');
+$router->post('tables/{id}/restore', 'TableController@restore'); // Khôi phục bàn đã xóa
 $router->put('tables/{id}', 'TableController@update');
 $router->put('tables/{id}/status', 'TableController@updateStatus');
-$router->delete('tables/{id}', 'TableController@destroy');
+$router->delete('tables/{id}', 'TableController@destroy'); // Soft delete
 
 // ============================================
 // VOUCHER ROUTES
@@ -171,8 +174,9 @@ $router->post('vouchers/validate', 'VoucherController@validateVoucher'); // Publ
 $router->get('vouchers', 'VoucherController@index'); // Admin/Staff
 $router->get('vouchers/{id}', 'VoucherController@show'); // Admin/Staff
 $router->post('vouchers', 'VoucherController@store'); // Admin only
+$router->post('vouchers/{id}/restore', 'VoucherController@restore'); // Khôi phục voucher đã xóa
 $router->put('vouchers/{id}', 'VoucherController@update'); // Admin only
-$router->delete('vouchers/{id}', 'VoucherController@destroy'); // Admin only
+$router->delete('vouchers/{id}', 'VoucherController@destroy'); // Admin only - Soft delete
 
 // ============================================
 // DASHBOARD ROUTES (Admin/Staff)

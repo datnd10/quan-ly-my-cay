@@ -112,7 +112,7 @@ class CategoryController extends Controller {
     }
     
     /**
-     * Xóa category
+     * Xóa category (soft delete)
      * DELETE /api/categories/{id}
      */
     public function destroy($id) {
@@ -121,7 +121,25 @@ class CategoryController extends Controller {
         
         try {
             $this->categoryService->deleteCategory($id);
-            return $this->success(null, 'Xóa danh mục thành công');
+            return $this->success(null, 'Xóa danh mục thành công (soft delete)');
+            
+        } catch (Exception $e) {
+            $statusCode = ($e->getMessage() === 'Không tìm thấy danh mục') ? 404 : 400;
+            return $this->error($e->getMessage(), $statusCode);
+        }
+    }
+    
+    /**
+     * Khôi phục category đã xóa
+     * POST /api/categories/{id}/restore
+     * Admin only
+     */
+    public function restore($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        try {
+            $category = $this->categoryService->restoreCategory($id);
+            return $this->success($category, 'Khôi phục danh mục thành công');
             
         } catch (Exception $e) {
             $statusCode = ($e->getMessage() === 'Không tìm thấy danh mục') ? 404 : 400;

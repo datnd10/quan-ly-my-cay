@@ -161,7 +161,7 @@ class TableController extends Controller {
     }
     
     /**
-     * Xóa table
+     * Xóa table (soft delete)
      * DELETE /api/tables/{id}
      * Admin only
      */
@@ -171,7 +171,25 @@ class TableController extends Controller {
         
         try {
             $this->tableService->deleteTable($id);
-            return $this->success(null, 'Xóa bàn thành công');
+            return $this->success(null, 'Xóa bàn thành công (soft delete)');
+            
+        } catch (Exception $e) {
+            $statusCode = ($e->getMessage() === 'Không tìm thấy bàn') ? 404 : 400;
+            return $this->error($e->getMessage(), $statusCode);
+        }
+    }
+    
+    /**
+     * Khôi phục table đã xóa
+     * POST /api/tables/{id}/restore
+     * Admin only
+     */
+    public function restore($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        try {
+            $table = $this->tableService->restoreTable($id);
+            return $this->success($table, 'Khôi phục bàn thành công');
             
         } catch (Exception $e) {
             $statusCode = ($e->getMessage() === 'Không tìm thấy bàn') ? 404 : 400;

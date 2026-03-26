@@ -161,7 +161,7 @@ class VoucherController extends Controller {
     }
     
     /**
-     * Xóa voucher
+     * Xóa voucher (soft delete)
      * DELETE /api/vouchers/{id}
      * Admin only
      */
@@ -171,7 +171,25 @@ class VoucherController extends Controller {
         
         try {
             $this->voucherService->deleteVoucher($id);
-            return $this->success(null, 'Xóa voucher thành công');
+            return $this->success(null, 'Xóa voucher thành công (soft delete)');
+            
+        } catch (Exception $e) {
+            $statusCode = ($e->getMessage() === 'Không tìm thấy voucher') ? 404 : 400;
+            return $this->error($e->getMessage(), $statusCode);
+        }
+    }
+    
+    /**
+     * Khôi phục voucher đã xóa
+     * POST /api/vouchers/{id}/restore
+     * Admin only
+     */
+    public function restore($id) {
+        $this->requireRole([ROLE_ADMIN]);
+        
+        try {
+            $voucher = $this->voucherService->restoreVoucher($id);
+            return $this->success($voucher, 'Khôi phục voucher thành công');
             
         } catch (Exception $e) {
             $statusCode = ($e->getMessage() === 'Không tìm thấy voucher') ? 404 : 400;

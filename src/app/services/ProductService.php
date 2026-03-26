@@ -113,7 +113,8 @@ class ProductService {
     }
     
     /**
-     * Xóa product
+     * Xóa product (soft delete)
+     * Set status = 0 để giữ lại dữ liệu cho orders đã tồn tại
      */
     public function deleteProduct($id) {
         // Kiểm tra product tồn tại
@@ -122,15 +123,43 @@ class ProductService {
             throw new Exception('Không tìm thấy sản phẩm');
         }
         
-        // TODO: Kiểm tra product có trong order nào không
-        // Nếu có thì không cho xóa hoặc soft delete
+        // Kiểm tra product đã bị xóa chưa
+        if ($product->status == 0) {
+            throw new Exception('Sản phẩm đã bị xóa trước đó');
+        }
         
-        // Xóa ảnh nếu có
+        // Soft delete: Set status = 0 thay vì xóa khỏi database
+        // Điều này đảm bảo dữ liệu order vẫn còn tham chiếu đến product
+        $this->productRepo->update($id, ['status' => 0]);
+        
+        // Xóa ảnh nếu có (vì sản phẩm đã không còn hiển thị)
         if (!empty($product->image_url)) {
             $this->deleteImageFile($product->image_url);
         }
         
-        return $this->productRepo->delete($id);
+        return true;
+    }
+    
+    /**
+     * Khôi phục product đã xóa (restore)
+     * Set status = 1 để hiển thị lại sản phẩm
+     */
+    public function restoreProduct($id) {
+        // Kiểm tra product tồn tại
+        $product = $this->productRepo->findById($id);
+        if (!$product) {
+            throw new Exception('Không tìm thấy sản phẩm');
+        }
+        
+        // Kiểm tra product có đang bị xóa không
+        if ($product->status == 1) {
+            throw new Exception('Sản phẩm đang hoạt động, không cần khôi phục');
+        }
+        
+        // Restore: Set status = 1
+        $this->productRepo->update($id, ['status' => 1]);
+        
+        return $this->productRepo->findById($id);
     }
     
     /**

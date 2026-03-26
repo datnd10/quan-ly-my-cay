@@ -111,7 +111,8 @@ class VoucherService {
     }
     
     /**
-     * Xóa voucher
+     * Xóa voucher (soft delete)
+     * Set status = 0 để giữ lại dữ liệu cho orders đã sử dụng
      */
     public function deleteVoucher($id) {
         // Kiểm tra voucher tồn tại
@@ -120,9 +121,31 @@ class VoucherService {
             throw new Exception('Không tìm thấy voucher');
         }
         
-        // TODO: Kiểm tra voucher có đang được sử dụng trong order nào không
+        // Kiểm tra đã bị xóa chưa
+        if ($voucher->status == 0) {
+            throw new Exception('Voucher đã bị xóa trước đó');
+        }
         
-        return $this->voucherRepo->delete($id);
+        // Soft delete: Set status = 0 thay vì xóa khỏi database
+        // Điều này đảm bảo dữ liệu order vẫn còn tham chiếu đến voucher
+        return $this->voucherRepo->update($id, ['status' => 0]);
+    }
+    
+    /**
+     * Khôi phục voucher đã xóa
+     */
+    public function restoreVoucher($id) {
+        $voucher = $this->voucherRepo->findById($id);
+        
+        if (!$voucher) {
+            throw new Exception('Không tìm thấy voucher');
+        }
+        
+        if ($voucher->status == 1) {
+            throw new Exception('Voucher đang hoạt động, không cần khôi phục');
+        }
+        
+        return $this->voucherRepo->update($id, ['status' => 1]);
     }
     
     /**

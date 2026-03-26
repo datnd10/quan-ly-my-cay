@@ -106,7 +106,8 @@ class CategoryService {
     }
     
     /**
-     * Xóa category
+     * Xóa category (soft delete)
+     * Set status = 0 để giữ lại dữ liệu cho products đã tồn tại
      */
     public function deleteCategory($id) {
         $category = $this->categoryRepo->findById($id);
@@ -115,13 +116,36 @@ class CategoryService {
             throw new Exception('Không tìm thấy danh mục');
         }
         
+        // Kiểm tra đã bị xóa chưa
+        if (isset($category['status']) && $category['status'] == 0) {
+            throw new Exception('Danh mục đã bị xóa trước đó');
+        }
+        
         // Kiểm tra xem có sản phẩm nào đang dùng category này không
         $productCount = $this->categoryRepo->countProducts($id);
         if ($productCount > 0) {
             throw new Exception("Không thể xóa danh mục này vì đang có {$productCount} sản phẩm");
         }
         
-        return $this->categoryRepo->delete($id);
+        // Soft delete: Set status = 0
+        return $this->categoryRepo->update($id, ['status' => 0]);
+    }
+    
+    /**
+     * Khôi phục category đã xóa
+     */
+    public function restoreCategory($id) {
+        $category = $this->categoryRepo->findById($id);
+        
+        if (!$category) {
+            throw new Exception('Không tìm thấy danh mục');
+        }
+        
+        if (!isset($category['status']) || $category['status'] == 1) {
+            throw new Exception('Danh mục đang hoạt động, không cần khôi phục');
+        }
+        
+        return $this->categoryRepo->update($id, ['status' => 1]);
     }
     
     /**

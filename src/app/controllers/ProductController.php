@@ -247,7 +247,26 @@ class ProductController extends Controller {
         
         try {
             $this->productService->deleteProduct($id);
-            return $this->success(null, 'Xóa sản phẩm thành công');
+            return $this->success(null, 'Xóa sản phẩm thành công (soft delete)');
+            
+        } catch (Exception $e) {
+            $statusCode = ($e->getMessage() === 'Không tìm thấy sản phẩm') ? 404 : 400;
+            return $this->error($e->getMessage(), $statusCode);
+        }
+    }
+    
+    /**
+     * Khôi phục product đã xóa
+     * POST /api/products/{id}/restore
+     * Admin only
+     */
+    public function restore($id) {
+        // Yêu cầu role ADMIN
+        $this->requireRole([ROLE_ADMIN]);
+        
+        try {
+            $product = $this->productService->restoreProduct($id);
+            return $this->success($product, 'Khôi phục sản phẩm thành công');
             
         } catch (Exception $e) {
             $statusCode = ($e->getMessage() === 'Không tìm thấy sản phẩm') ? 404 : 400;

@@ -644,14 +644,28 @@
       },
       "delete": {
         "tags": ["Categories"],
-        "summary": "Xóa danh mục",
-        "description": "Admin only - Không cho xóa nếu đang có sản phẩm",
+        "summary": "Xóa danh mục (soft delete)",
+        "description": "Admin only - Không cho xóa nếu đang có sản phẩm. Soft delete: set status = 0",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
         ],
         "responses": {
           "200": {"description": "Xóa thành công"}
+        }
+      }
+    },
+    "/categories/{id}/restore": {
+      "post": {
+        "tags": ["Categories"],
+        "summary": "Khôi phục danh mục đã xóa",
+        "description": "Admin only - Khôi phục danh mục đã bị soft delete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Khôi phục thành công"}
         }
       }
     },
@@ -799,14 +813,28 @@
       },
       "delete": {
         "tags": ["Products"],
-        "summary": "Xóa sản phẩm",
-        "description": "Admin only",
+        "summary": "Xóa sản phẩm (soft delete)",
+        "description": "Admin only - Soft delete: set status = 0 để giữ dữ liệu cho orders",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
         ],
         "responses": {
           "200": {"description": "Xóa thành công"}
+        }
+      }
+    },
+    "/products/{id}/restore": {
+      "post": {
+        "tags": ["Products"],
+        "summary": "Khôi phục sản phẩm đã xóa",
+        "description": "Admin only - Khôi phục sản phẩm đã bị soft delete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Khôi phục thành công"}
         }
       }
     },
@@ -947,14 +975,28 @@
       },
       "delete": {
         "tags": ["Tables"],
-        "summary": "Xóa bàn",
-        "description": "Admin only",
+        "summary": "Xóa bàn (soft delete)",
+        "description": "Admin only - Soft delete: set is_deleted = 1 để giữ dữ liệu cho orders",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
         ],
         "responses": {
           "200": {"description": "Xóa thành công"}
+        }
+      }
+    },
+    "/tables/{id}/restore": {
+      "post": {
+        "tags": ["Tables"],
+        "summary": "Khôi phục bàn đã xóa",
+        "description": "Admin only - Khôi phục bàn đã bị soft delete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Khôi phục thành công"}
         }
       }
     },
@@ -1174,14 +1216,28 @@
       },
       "delete": {
         "tags": ["Vouchers"],
-        "summary": "Xóa voucher",
-        "description": "Admin only",
+        "summary": "Xóa voucher (soft delete)",
+        "description": "Admin only - Soft delete: set status = 0 để giữ dữ liệu cho orders",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
         ],
         "responses": {
           "200": {"description": "Xóa thành công"}
+        }
+      }
+    },
+    "/vouchers/{id}/restore": {
+      "post": {
+        "tags": ["Vouchers"],
+        "summary": "Khôi phục voucher đã xóa",
+        "description": "Admin only - Khôi phục voucher đã bị soft delete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Khôi phục thành công"}
         }
       }
     },

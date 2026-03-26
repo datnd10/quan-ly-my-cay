@@ -63,6 +63,7 @@ CREATE TABLE point_transactions (
 CREATE TABLE categories (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
+    status TINYINT DEFAULT 1 COMMENT '1=active, 0=deleted (soft delete)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -89,6 +90,7 @@ CREATE TABLE tables (
     table_number VARCHAR(20) NOT NULL UNIQUE,
     capacity INT DEFAULT 4 COMMENT 'Số chỗ ngồi',
     status VARCHAR(20) DEFAULT 'AVAILABLE' COMMENT 'AVAILABLE, OCCUPIED, RESERVED, MAINTENANCE',
+    is_deleted TINYINT DEFAULT 0 COMMENT '0=active, 1=deleted (soft delete)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -211,6 +213,13 @@ CREATE INDEX idx_order_status_history_created ON order_status_history(created_at
 -- Product indexes
 CREATE INDEX idx_product_category ON products(category_id);
 CREATE INDEX idx_product_status ON products(status);
+
+-- Category indexes
+CREATE INDEX idx_category_status ON categories(status);
+
+-- Table indexes
+CREATE INDEX idx_table_status ON tables(status);
+CREATE INDEX idx_table_is_deleted ON tables(is_deleted);
 
 -- Voucher indexes
 CREATE INDEX idx_voucher_code ON vouchers(code);

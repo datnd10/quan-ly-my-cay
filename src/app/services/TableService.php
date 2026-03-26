@@ -104,7 +104,8 @@ class TableService {
     }
     
     /**
-     * Xóa table
+     * Xóa table (soft delete)
+     * Set is_deleted = 1 để giữ lại dữ liệu cho orders đã tồn tại
      */
     public function deleteTable($id) {
         // Kiểm tra table tồn tại
@@ -113,14 +114,35 @@ class TableService {
             throw new Exception('Không tìm thấy bàn');
         }
         
+        // Kiểm tra đã bị xóa chưa
+        if ($table->is_deleted == 1) {
+            throw new Exception('Bàn đã bị xóa trước đó');
+        }
+        
         // Kiểm tra table có đang được sử dụng không
         if ($table->status === 'OCCUPIED') {
             throw new Exception('Không thể xóa bàn đang có khách');
         }
         
-        // TODO: Kiểm tra table có trong order/reservation nào không
+        // Soft delete: Set is_deleted = 1 thay vì xóa khỏi database
+        return $this->tableRepo->update($id, ['is_deleted' => 1]);
+    }
+    
+    /**
+     * Khôi phục table đã xóa
+     */
+    public function restoreTable($id) {
+        $table = $this->tableRepo->findById($id);
         
-        return $this->tableRepo->delete($id);
+        if (!$table) {
+            throw new Exception('Không tìm thấy bàn');
+        }
+        
+        if ($table->is_deleted == 0) {
+            throw new Exception('Bàn đang hoạt động, không cần khôi phục');
+        }
+        
+        return $this->tableRepo->update($id, ['is_deleted' => 0]);
     }
     
     /**
