@@ -96,6 +96,31 @@ CREATE TABLE tables (
 );
 
 -- =========================
+-- RESERVATIONS (ĐẶT BÀN)
+-- =========================
+CREATE TABLE reservations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    customer_id BIGINT NOT NULL,
+    table_id BIGINT COMMENT 'Bàn được assign (có thể null khi mới tạo)',
+    reservation_time DATETIME NOT NULL COMMENT 'Thời gian đặt bàn',
+    guest_count INT NOT NULL COMMENT 'Số người',
+    customer_name VARCHAR(100) NOT NULL,
+    customer_phone VARCHAR(20) NOT NULL,
+    customer_note TEXT COMMENT 'Ghi chú của khách',
+    status VARCHAR(20) DEFAULT 'PENDING' COMMENT 'PENDING, CONFIRMED, ARRIVED, COMPLETED, CANCELLED, NO_SHOW',
+    order_id BIGINT COMMENT 'Order ID khi khách đến',
+    confirmed_by BIGINT COMMENT 'Staff xác nhận',
+    confirmed_at DATETIME COMMENT 'Thời gian xác nhận',
+    cancelled_reason TEXT COMMENT 'Lý do hủy',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+    FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE SET NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
+    FOREIGN KEY (confirmed_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- =========================
 -- ORDERS (CẢI TIẾN)
 -- =========================
 CREATE TABLE orders (

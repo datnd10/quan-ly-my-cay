@@ -158,6 +158,7 @@ $router->get('customers/my-points/history', 'CustomerController@myPointHistory')
 // ============================================
 // TABLE ROUTES
 // ============================================
+$router->get('tables/available-slots', 'TableController@availableSlots'); // Public - xem slot trống
 $router->get('tables', 'TableController@index');
 $router->get('tables/{id}', 'TableController@show');
 $router->post('tables', 'TableController@store');
@@ -165,6 +166,26 @@ $router->post('tables/{id}/restore', 'TableController@restore'); // Khôi phục
 $router->put('tables/{id}', 'TableController@update');
 $router->put('tables/{id}/status', 'TableController@updateStatus');
 $router->delete('tables/{id}', 'TableController@destroy'); // Soft delete
+
+// ============================================
+// RESERVATION ROUTES
+// ============================================
+// Public APIs
+$router->post('reservations/check-availability', 'ReservationController@checkAvailability'); // Check bàn trống
+
+// Customer APIs
+$router->get('reservations/my', 'ReservationController@my'); // Xem đặt bàn của mình
+$router->post('reservations', 'ReservationController@store'); // Đặt bàn mới
+$router->put('reservations/{id}/cancel', 'ReservationController@cancel'); // Hủy đặt bàn
+
+// Staff/Admin APIs
+$router->get('reservations/today', 'ReservationController@today'); // Đặt bàn hôm nay
+$router->get('reservations', 'ReservationController@index'); // Danh sách tất cả
+$router->get('reservations/{id}', 'ReservationController@show'); // Chi tiết
+$router->post('reservations/{id}/confirm', 'ReservationController@confirm'); // Xác nhận
+$router->post('reservations/{id}/arrive', 'ReservationController@arrive'); // Khách đến
+$router->put('reservations/{id}/no-show', 'ReservationController@noShow'); // No-show
+$router->put('reservations/{id}/assign-table', 'ReservationController@assignTable'); // Assign bàn
 
 // ============================================
 // VOUCHER ROUTES

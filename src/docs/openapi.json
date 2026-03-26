@@ -763,10 +763,44 @@
       "put": {
         "tags": ["Products"],
         "summary": "Cập nhật sản phẩm",
-        "description": "Admin/Staff cập nhật - Hỗ trợ upload nhiều ảnh mới",
+        "description": "Admin/Staff cập nhật sản phẩm. LƯU Ý: Khi upload file, dùng POST với ?_method=PUT thay vì PUT trực tiếp (PHP không parse multipart/form-data cho PUT)",
         "security": [{"bearerAuth": []}],
         "parameters": [
-          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}},
+          {"name": "_method", "in": "query", "required": false, "schema": {"type": "string", "enum": ["PUT"]}, "description": "Dùng POST với ?_method=PUT khi upload file"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category_id": {"type": "integer"},
+                  "name": {"type": "string"},
+                  "price": {"type": "number"},
+                  "description": {"type": "string"},
+                  "image_url": {"type": "string", "description": "URL ảnh có sẵn (ngăn cách bằng | nếu nhiều ảnh)"},
+                  "stock_quantity": {"type": "integer"},
+                  "min_stock": {"type": "integer"},
+                  "status": {"type": "integer", "enum": [0, 1]}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Cập nhật thành công"}
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Cập nhật sản phẩm với file upload",
+        "description": "Dùng POST với ?_method=PUT để upload ảnh mới (Admin/Staff). Ảnh cũ sẽ bị xóa khi upload ảnh mới.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}},
+          {"name": "_method", "in": "query", "required": true, "schema": {"type": "string", "enum": ["PUT"]}, "description": "Bắt buộc phải có _method=PUT"}
         ],
         "requestBody": {
           "required": true,
@@ -785,23 +819,8 @@
                   "images": {
                     "type": "array",
                     "items": {"type": "string", "format": "binary"},
-                    "description": "Upload ảnh mới (sẽ xóa ảnh cũ)"
+                    "description": "Upload ảnh mới (jpg, png, gif, webp, max 5MB/file). Ảnh cũ sẽ bị xóa."
                   }
-                }
-              }
-            },
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "category_id": {"type": "integer"},
-                  "name": {"type": "string"},
-                  "price": {"type": "number"},
-                  "description": {"type": "string"},
-                  "image_url": {"type": "string"},
-                  "stock_quantity": {"type": "integer"},
-                  "min_stock": {"type": "integer"},
-                  "status": {"type": "integer", "enum": [0, 1]}
                 }
               }
             }
@@ -1025,6 +1044,244 @@
         },
         "responses": {
           "200": {"description": "Cập nhật trạng thái thành công"}
+        }
+      }
+    },
+    "/tables/available-slots": {
+      "get": {
+        "tags": ["Tables"],
+        "summary": "Xem slot trống theo ngày",
+        "description": "Public - Xem các khung giờ còn bàn trống trong ngày",
+        "parameters": [
+          {"name": "date", "in": "query", "required": true, "schema": {"type": "string", "format": "date"}, "example": "2026-03-27"},
+          {"name": "guest_count", "in": "query", "schema": {"type": "integer"}, "example": 4}
+        ],
+        "responses": {
+          "200": {"description": "Danh sách time slots với thông tin bàn trống"}
+        }
+      }
+    },
+    "/reservations": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Danh sách đặt bàn (Admin/Staff)",
+        "description": "Admin/Staff xem tất cả đặt bàn",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["PENDING", "CONFIRMED", "ARRIVED", "COMPLETED", "CANCELLED", "NO_SHOW"]}},
+          {"name": "customer_id", "in": "query", "schema": {"type": "integer"}},
+          {"name": "table_id", "in": "query", "schema": {"type": "integer"}},
+          {"name": "date", "in": "query", "schema": {"type": "string", "format": "date"}},
+          {"name": "from_date", "in": "query", "schema": {"type": "string", "format": "date"}},
+          {"name": "to_date", "in": "query", "schema": {"type": "string", "format": "date"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      },
+      "post": {
+        "tags": ["Reservations"],
+        "summary": "Đặt bàn mới (Customer)",
+        "description": "Khách hàng đặt bàn trước",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["reservation_time", "guest_count"],
+                "properties": {
+                  "reservation_time": {"type": "string", "format": "date-time", "example": "2026-03-27 19:00:00"},
+                  "guest_count": {"type": "integer", "example": 4},
+                  "table_id": {"type": "integer", "description": "Optional - Chọn bàn cụ thể", "example": 1},
+                  "customer_name": {"type": "string", "description": "Optional - Tự động lấy từ profile", "example": "Nguyễn Văn A"},
+                  "customer_phone": {"type": "string", "description": "Optional - Tự động lấy từ profile", "example": "0901234567"},
+                  "customer_note": {"type": "string", "example": "Gần cửa sổ"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Đặt bàn thành công"}
+        }
+      }
+    },
+    "/reservations/my": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Xem đặt bàn của mình (Customer)",
+        "description": "Khách hàng xem danh sách đặt bàn của mình",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
+          {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["PENDING", "CONFIRMED", "ARRIVED", "COMPLETED", "CANCELLED", "NO_SHOW"]}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      }
+    },
+    "/reservations/today": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Đặt bàn hôm nay (Admin/Staff)",
+        "description": "Xem tất cả đặt bàn trong ngày hôm nay",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      }
+    },
+    "/reservations/check-availability": {
+      "post": {
+        "tags": ["Reservations"],
+        "summary": "Check bàn có trống không",
+        "description": "Public - Kiểm tra bàn còn trống trong khung giờ",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["reservation_time", "guest_count"],
+                "properties": {
+                  "reservation_time": {"type": "string", "format": "date-time", "example": "2026-03-27 19:00:00"},
+                  "guest_count": {"type": "integer", "example": 4},
+                  "table_id": {"type": "integer", "description": "Optional - Check bàn cụ thể", "example": 1}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Thông tin bàn trống"}
+        }
+      }
+    },
+    "/reservations/{id}": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Chi tiết đặt bàn",
+        "description": "Xem chi tiết đặt bàn. Customer chỉ xem của mình, Staff/Admin xem tất cả",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Success"}
+        }
+      }
+    },
+    "/reservations/{id}/confirm": {
+      "post": {
+        "tags": ["Reservations"],
+        "summary": "Xác nhận đặt bàn (Staff/Admin)",
+        "description": "Staff xác nhận đặt bàn, có thể assign bàn cụ thể",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "table_id": {"type": "integer", "description": "Optional - Assign bàn cụ thể", "example": 1}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Xác nhận thành công"}
+        }
+      }
+    },
+    "/reservations/{id}/arrive": {
+      "post": {
+        "tags": ["Reservations"],
+        "summary": "Khách đến - Check in (Staff/Admin)",
+        "description": "Staff check-in khách đến, tự động tạo order",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Check-in thành công"}
+        }
+      }
+    },
+    "/reservations/{id}/cancel": {
+      "put": {
+        "tags": ["Reservations"],
+        "summary": "Hủy đặt bàn",
+        "description": "Customer hủy đặt bàn của mình, Staff/Admin hủy bất kỳ",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {"type": "string", "example": "Có việc đột xuất"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Hủy thành công"}
+        }
+      }
+    },
+    "/reservations/{id}/no-show": {
+      "put": {
+        "tags": ["Reservations"],
+        "summary": "Đánh dấu no-show (Staff/Admin)",
+        "description": "Staff đánh dấu khách không đến",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "responses": {
+          "200": {"description": "Đánh dấu thành công"}
+        }
+      }
+    },
+    "/reservations/{id}/assign-table": {
+      "put": {
+        "tags": ["Reservations"],
+        "summary": "Assign bàn cho đặt bàn (Staff/Admin)",
+        "description": "Staff assign hoặc đổi bàn cho đặt bàn",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["table_id"],
+                "properties": {
+                  "table_id": {"type": "integer", "example": 1}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Assign bàn thành công"}
         }
       }
     },

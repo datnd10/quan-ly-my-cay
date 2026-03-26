@@ -69,6 +69,27 @@ class Router {
      * Xử lý request
      */
     public function dispatch($method, $uri) {
+        // Hỗ trợ method override cho PUT/PATCH/DELETE qua POST
+        // Kiểm tra _method trong query string hoặc POST data
+        if ($method === 'POST') {
+            // Check query string: ?_method=PUT
+            if (isset($_GET['_method'])) {
+                $method = strtoupper($_GET['_method']);
+            }
+            // Check POST data: _method=PUT
+            elseif (isset($_POST['_method'])) {
+                $method = strtoupper($_POST['_method']);
+            }
+            // Check JSON body
+            else {
+                $input = file_get_contents('php://input');
+                $data = json_decode($input, true);
+                if (isset($data['_method'])) {
+                    $method = strtoupper($data['_method']);
+                }
+            }
+        }
+        
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) {
                 continue;

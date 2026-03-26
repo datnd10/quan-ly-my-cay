@@ -211,4 +211,86 @@ class TableController extends Controller {
             return $this->error($e->getMessage(), 500);
         }
     }
+    
+    /**
+     * Xem slot trống theo ngày
+     * GET /api/tables/available-slots?date=2026-03-26&guest_count=4
+     * Public - cho khách xem giờ nào còn bàn trống
+     */
+    public function availableSlots() {
+        try {
+            $date = $this->getQuery('date');
+            $guestCount = (int)$this->getQuery('guest_count', 1);
+            
+            if (empty($date)) {
+                return $this->error('date không được để trống', 422);
+            }
+            
+            // Validate date format
+            $dateObj = DateTime::createFromFormat('Y-m-d', $date);
+            if (!$dateObj || $dateObj->format('Y-m-d') !== $date) {
+                return $this->error('date phải có định dạng Y-m-d (VD: 2026-03-26)', 422);
+            }
+            
+            // Không cho xem quá khứ
+            if ($date < date('Y-m-d')) {
+                return $this->error('Không thể xem slot của ngày trong quá khứ', 422);
+            }
+            
+            $tableRepo = new TableRepository();
+            $reservationRepo = new ReservationRepository();
+            
+            // Lấy tất cả bàn phù hợp
+            $allTables = $this->tableService->getAllTables(['min_capacity' => $guestCount]);
+            
+            if (empty($allTables)) {
+                return $this->success([
+                    'date' => $date,
+                    'slots' => [],
+                    'message' => 'Không có bàn phù hợp với số người này'
+                ]);
+            }
+            
+            // Tạo các time slots (11:00 - 22:00, mỗi slot 1 giờ)
+            $slots = [];
+            $startHour = 11;
+            $endHour = 22;
+            
+            for ($hour = $startHour; $hour < $endHour; $hour++) {
+                $timeSlot = sprintf('%s %02d:00:00', $date, $hour);
+                
+                // Đếm số bàn trống trong slot này
+                $availableCount = 0;
+                $availableTables = [];
+                
+                foreach ($allTables as $table) {
+                    if ($reservationRepo->isTableAvailable($table->id, $timeSlot)) {
+                        $availableCount++;
+                        $availableTables[] = [
+                            'id' => $table->id,
+                            'table_number' => $table->table_number,
+                            'capacity' => $table->capacity
+                        ];
+                    }
+                }
+                
+                $slots[] = [
+                    'time' => sprintf('%02d:00', $hour),
+                    'datetime' => $timeSlot,
+                    'available' => $availableCount > 0,
+                    'available_tables_count' => $availableCount,
+                    'available_tables' => $availableTables
+                ];
+            }
+            
+            return $this->success([
+                'date' => $date,
+                'guest_count' => $guestCount,
+                'slots' => $slots
+            ]);
+            
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 500);
+        }
+    }
 }
