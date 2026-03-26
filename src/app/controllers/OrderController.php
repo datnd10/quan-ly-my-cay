@@ -44,7 +44,12 @@ class OrderController extends Controller {
             
             // Customer chỉ xem đơn của mình
             if ($user['role'] === 'CUSTOMER') {
-                $filters['customer_id'] = $user['user_id'];
+                // Lấy customer_id từ bảng customers dựa vào user_id
+                $customerRepo = new CustomerRepository();
+                $customer = $customerRepo->findByUserId($user['user_id']);
+                if ($customer) {
+                    $filters['customer_id'] = $customer['id'];
+                }
             } elseif ($this->getQuery('customer_id')) {
                 $filters['customer_id'] = $this->getQuery('customer_id');
             }
@@ -69,8 +74,12 @@ class OrderController extends Controller {
             $order = $this->orderService->getOrderById($id);
             
             // Customer chỉ xem đơn của mình
-            if ($user['role'] === 'CUSTOMER' && $order->customer_id != $user['user_id']) {
-                return $this->error('Bạn không có quyền xem đơn hàng này', 403);
+            if ($user['role'] === 'CUSTOMER') {
+                $customerRepo = new CustomerRepository();
+                $customer = $customerRepo->findByUserId($user['user_id']);
+                if (!$customer || $order->customer_id != $customer['id']) {
+                    return $this->error('Bạn không có quyền xem đơn hàng này', 403);
+                }
             }
             
             $this->success($order);
@@ -218,7 +227,9 @@ class OrderController extends Controller {
             // Customer chỉ hủy được đơn của mình
             if ($user['role'] === 'CUSTOMER') {
                 $order = $this->orderService->getOrderById($id);
-                if ($order->customer_id != $user['user_id']) {
+                $customerRepo = new CustomerRepository();
+                $customer = $customerRepo->findByUserId($user['user_id']);
+                if (!$customer || $order->customer_id != $customer['id']) {
                     return $this->error('Bạn không có quyền hủy đơn hàng này', 403);
                 }
             }
