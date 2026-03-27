@@ -224,6 +224,10 @@ $router->put('orders/{id}/items', 'OrderController@updateItems');
 $router->post('orders/{id}/voucher', 'OrderController@applyVoucher');
 $router->delete('orders/{id}/voucher', 'OrderController@removeVoucher');
 
+// Order points (điểm tích lũy)
+$router->post('orders/{id}/points', 'OrderController@applyPoint');
+$router->delete('orders/{id}/points', 'OrderController@removePoint');
+
 // Order actions
 $router->post('orders/{id}/payment', 'OrderController@payment');
 $router->post('orders/{id}/cancel', 'OrderController@cancel');

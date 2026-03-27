@@ -195,6 +195,47 @@ class OrderController extends Controller {
     }
     
     /**
+     * POST /orders/{id}/points
+     * Áp dụng điểm tích lũy
+     */
+    public function applyPoint($id) {
+        try {
+            $user = $this->requireRole(['ADMIN', 'STAFF']);
+            
+            $data = $this->getBody();
+            $points = $data['points'] ?? 0;
+            
+            if (empty($points) || $points <= 0) {
+                return $this->error('Số điểm phải lớn hơn 0', 400);
+            }
+            
+            $order = $this->orderService->applyPoint($id, $points, $user['user_id']);
+            
+            $this->success($order, 'Áp dụng điểm thành công');
+            
+        } catch (Exception $e) {
+            return $this->handleException($e);
+        }
+    }
+    
+    /**
+     * DELETE /orders/{id}/points
+     * Hủy sử dụng điểm
+     */
+    public function removePoint($id) {
+        try {
+            $user = $this->requireRole(['ADMIN', 'STAFF']);
+            
+            $order = $this->orderService->removePoint($id, $user['user_id']);
+            
+            $this->success($order, 'Hủy sử dụng điểm thành công');
+            
+        } catch (Exception $e) {
+            return $this->handleException($e);
+        }
+    }
+    
+    /**
      * POST /orders/{id}/payment
      * Thanh toán đơn hàng
      */

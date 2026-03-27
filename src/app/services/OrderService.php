@@ -303,11 +303,13 @@ class OrderService {
             $this->voucherService->applyVoucher($voucher->id);
             
             // Update order
+            $pointsDiscount = (float)$order->points_discount;
+            $totalDiscount = $discount + $pointsDiscount;
             $this->orderRepo->update($orderId, [
                 'voucher_id' => $voucher->id,
                 'voucher_discount' => $discount,
-                'discount_amount' => $discount,
-                'final_amount' => max(0, $order->total_amount - $discount)
+                'discount_amount' => $totalDiscount,
+                'final_amount' => max(0, $order->total_amount - $totalDiscount)
             ]);
             
             $this->db->commit();
@@ -344,11 +346,161 @@ class OrderService {
             $this->voucherService->revertVoucher($order->voucher_id);
             
             // Update order
+            $pointsDiscount = (float)$order->points_discount;
             $this->orderRepo->update($orderId, [
                 'voucher_id' => null,
                 'voucher_discount' => 0,
-                'discount_amount' => 0,
-                'final_amount' => $order->total_amount
+                'discount_amount' => $pointsDiscount,
+                'final_amount' => max(0, $order->total_amount - $pointsDiscount)
+            ]);
+            
+            $this->db->commit();
+            
+            return $this->orderRepo->findById($orderId);
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
+    
+    /**
+     * Áp dụng điểm tích lũy vào đơn hàng
+     * Mỗi điểm = giảm 1,000 VND
+     */
+    public function applyPoint($orderId, $points, $userId) {
+        $order = $this->orderRepo->findById($orderId);
+        if (!$order) {
+            throw new Exception('Không tìm thấy đơn hàng');
+        }
+        
+        if (!$order->canEdit()) {
+            throw new Exception('Không thể áp dụng điểm cho đơn hàng đã hoàn thành');
+        }
+        
+        if ($order->points_used > 0) {
+            throw new Exception('Đơn hàng đã sử dụng điểm. Vui lòng hủy điểm hiện tại trước.');
+        }
+        
+        if (!$order->customer_id) {
+            throw new Exception('Đơn hàng chưa có khách hàng. Vui lòng gán khách hàng trước.');
+        }
+        
+        $points = (int)$points;
+        if ($points <= 0) {
+            throw new Exception('Số điểm phải lớn hơn 0');
+        }
+        
+        // Kiểm tra khách hàng có đủ điểm không
+        $customerRepo = new CustomerRepository();
+        $customer = $customerRepo->findById($order->customer_id);
+        if (!$customer) {
+            throw new Exception('Không tìm thấy khách hàng');
+        }
+        
+        $customerPoints = is_array($customer) ? (int)$customer['points'] : (int)$customer->points;
+        if ($customerPoints < $points) {
+            throw new Exception("Khách hàng chỉ có {$customerPoints} điểm, không đủ để sử dụng {$points} điểm");
+        }
+        
+        // Tính giảm giá từ điểm (1 điểm = 1,000 VND)
+        $pointsDiscount = $points * 1000;
+        
+        // Không cho giảm quá tổng tiền sau voucher
+        $voucherDiscount = (float)$order->voucher_discount;
+        $maxDiscount = $order->total_amount - $voucherDiscount;
+        if ($pointsDiscount > $maxDiscount) {
+            throw new Exception('Số tiền giảm từ điểm vượt quá tổng tiền đơn hàng. Tối đa có thể dùng ' . floor($maxDiscount / 1000) . ' điểm.');
+        }
+        
+        $this->db->beginTransaction();
+        
+        try {
+            // Trừ điểm khách hàng
+            $customerRepo->updatePoints($order->customer_id, -$points);
+            
+            // Lấy số dư sau khi trừ
+            $customerAfter = $customerRepo->findById($order->customer_id);
+            $balanceAfter = is_array($customerAfter) ? (int)$customerAfter['points'] : (int)$customerAfter->points;
+            
+            // Log point transaction
+            $pointRepo = new PointTransactionRepository();
+            $pointRepo->create([
+                'customer_id' => $order->customer_id,
+                'points' => -$points,
+                'type' => 'REDEEM',
+                'description' => "Sử dụng điểm cho đơn hàng #{$order->id}",
+                'reference_type' => 'order',
+                'reference_id' => $order->id,
+                'balance_after' => $balanceAfter
+            ]);
+            
+            // Update order
+            $totalDiscount = $voucherDiscount + $pointsDiscount;
+            $this->orderRepo->update($orderId, [
+                'points_used' => $points,
+                'points_discount' => $pointsDiscount,
+                'discount_amount' => $totalDiscount,
+                'final_amount' => max(0, $order->total_amount - $totalDiscount)
+            ]);
+            
+            $this->db->commit();
+            
+            return $this->orderRepo->findById($orderId);
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
+    
+    /**
+     * Hủy sử dụng điểm cho đơn hàng
+     */
+    public function removePoint($orderId, $userId) {
+        $order = $this->orderRepo->findById($orderId);
+        if (!$order) {
+            throw new Exception('Không tìm thấy đơn hàng');
+        }
+        
+        if (!$order->canEdit()) {
+            throw new Exception('Không thể hủy điểm cho đơn hàng đã hoàn thành');
+        }
+        
+        if ($order->points_used <= 0) {
+            throw new Exception('Đơn hàng chưa sử dụng điểm');
+        }
+        
+        $this->db->beginTransaction();
+        
+        try {
+            // Hoàn lại điểm cho khách hàng
+            $customerRepo = new CustomerRepository();
+            $customerRepo->updatePoints($order->customer_id, $order->points_used);
+            
+            // Lấy số dư sau khi hoàn
+            $customerAfter = $customerRepo->findById($order->customer_id);
+            $balanceAfter = is_array($customerAfter) ? (int)$customerAfter['points'] : (int)$customerAfter->points;
+            
+            // Log point transaction
+            $pointRepo = new PointTransactionRepository();
+            $pointRepo->create([
+                'customer_id' => $order->customer_id,
+                'points' => $order->points_used,
+                'type' => 'REFUND',
+                'description' => "Hoàn điểm từ đơn hàng #{$order->id}",
+                'reference_type' => 'order',
+                'reference_id' => $order->id,
+                'balance_after' => $balanceAfter
+            ]);
+            
+            // Update order
+            $voucherDiscount = (float)$order->voucher_discount;
+            $this->orderRepo->update($orderId, [
+                'points_used' => 0,
+                'points_discount' => 0,
+                'discount_amount' => $voucherDiscount,
+                'final_amount' => max(0, $order->total_amount - $voucherDiscount)
             ]);
             
             $this->db->commit();
@@ -461,6 +613,26 @@ class OrderService {
                 $this->voucherService->revertVoucher($order->voucher_id);
             }
             
+            // Hoàn lại điểm nếu đã sử dụng
+            if ($order->points_used > 0) {
+                $customerRepo = new CustomerRepository();
+                $customerRepo->updatePoints($order->customer_id, $order->points_used);
+                
+                $customerAfter = $customerRepo->findById($order->customer_id);
+                $balanceAfter = is_array($customerAfter) ? (int)$customerAfter['points'] : (int)$customerAfter->points;
+                
+                $pointRepo = new PointTransactionRepository();
+                $pointRepo->create([
+                    'customer_id' => $order->customer_id,
+                    'points' => $order->points_used,
+                    'type' => 'REFUND',
+                    'description' => "Hoàn điểm do hủy đơn hàng #{$order->id}",
+                    'reference_type' => 'order',
+                    'reference_id' => $order->id,
+                    'balance_after' => $balanceAfter
+                ]);
+            }
+            
             // Free bàn
             if ($order->table_id) {
                 $this->tableRepo->updateStatus($order->table_id, 'AVAILABLE');
@@ -534,12 +706,18 @@ class OrderService {
             $discount = $voucher->calculateDiscount($totalAmount);
         }
         
+        // Tính lại points discount nếu có
+        $pointsDiscount = (float)$order->points_discount;
+        
+        // Tổng discount = voucher + points
+        $totalDiscount = $discount + $pointsDiscount;
+        
         // Update order
         $this->orderRepo->update($orderId, [
             'total_amount' => $totalAmount,
-            'discount_amount' => $discount,
             'voucher_discount' => $discount,
-            'final_amount' => max(0, $totalAmount - $discount)
+            'discount_amount' => $totalDiscount,
+            'final_amount' => max(0, $totalAmount - $totalDiscount)
         ]);
     }
     

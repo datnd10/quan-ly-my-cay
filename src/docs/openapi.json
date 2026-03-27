@@ -1791,6 +1791,99 @@
         }
       }
     },
+    "/orders/{id}/points": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Áp dụng điểm tích lũy",
+        "description": "Áp dụng điểm tích lũy vào đơn hàng. Mỗi điểm = giảm 1,000 VND. Đơn hàng phải ACTIVE và có customer_id. Điểm sẽ bị trừ ngay từ tài khoản khách hàng.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}, "description": "Order ID"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["points"],
+                "properties": {
+                  "points": {"type": "integer", "description": "Số điểm muốn sử dụng (1 điểm = 1,000 VND)", "example": 5}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Áp dụng điểm thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean", "example": true},
+                    "message": {"type": "string", "example": "Áp dụng điểm thành công"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "integer"},
+                        "customer_id": {"type": "integer"},
+                        "total_amount": {"type": "number", "example": 200000},
+                        "voucher_discount": {"type": "number", "example": 0},
+                        "points_used": {"type": "integer", "example": 5, "description": "Số điểm đã sử dụng"},
+                        "points_discount": {"type": "number", "example": 5000, "description": "Số tiền giảm từ điểm (points_used × 1000)"},
+                        "discount_amount": {"type": "number", "example": 5000, "description": "Tổng giảm giá (voucher + points)"},
+                        "final_amount": {"type": "number", "example": 195000}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {"description": "Đơn hàng đã sử dụng điểm / Không đủ điểm / Số tiền giảm vượt quá tổng đơn"},
+          "404": {"description": "Không tìm thấy đơn hàng"}
+        }
+      },
+      "delete": {
+        "tags": ["Orders"],
+        "summary": "Hủy sử dụng điểm",
+        "description": "Hủy sử dụng điểm đã áp dụng cho đơn hàng. Điểm sẽ được hoàn lại vào tài khoản khách hàng. Chỉ hủy được khi đơn ACTIVE.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}, "description": "Order ID"}
+        ],
+        "responses": {
+          "200": {
+            "description": "Hủy sử dụng điểm thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean", "example": true},
+                    "message": {"type": "string", "example": "Hủy sử dụng điểm thành công"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "integer"},
+                        "points_used": {"type": "integer", "example": 0},
+                        "points_discount": {"type": "number", "example": 0},
+                        "discount_amount": {"type": "number"},
+                        "final_amount": {"type": "number"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {"description": "Đơn hàng chưa sử dụng điểm"},
+          "404": {"description": "Không tìm thấy đơn hàng"}
+        }
+      }
+    },
     "/orders/{id}/payment": {
       "post": {
         "tags": ["Orders"],
@@ -1856,7 +1949,7 @@
       "post": {
         "tags": ["Orders"],
         "summary": "Hủy đơn hàng",
-        "description": "Hủy đơn hàng. Sẽ revert voucher và free bàn. Customer có thể hủy đơn của mình.",
+        "description": "Hủy đơn hàng. Sẽ revert voucher, hoàn lại điểm (nếu đã sử dụng) và free bàn. Customer có thể hủy đơn của mình.",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}

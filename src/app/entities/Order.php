@@ -12,6 +12,8 @@ class Order {
     public $table_id;
     public $voucher_id;
     public $voucher_discount;
+    public $points_used;
+    public $points_discount;
     public $status;
     public $total_amount;
     public $discount_amount;
@@ -39,6 +41,8 @@ class Order {
             $this->table_id = $data['table_id'] ?? null;
             $this->voucher_id = $data['voucher_id'] ?? null;
             $this->voucher_discount = $data['voucher_discount'] ?? 0;
+            $this->points_used = $data['points_used'] ?? 0;
+            $this->points_discount = $data['points_discount'] ?? 0;
             $this->status = $data['status'] ?? self::STATUS_ACTIVE;
             $this->total_amount = $data['total_amount'] ?? 0;
             $this->discount_amount = $data['discount_amount'] ?? 0;
@@ -60,6 +64,8 @@ class Order {
             'table_id' => $this->table_id ? (int)$this->table_id : null,
             'voucher_id' => $this->voucher_id ? (int)$this->voucher_id : null,
             'voucher_discount' => (float)$this->voucher_discount,
+            'points_used' => (int)$this->points_used,
+            'points_discount' => (float)$this->points_discount,
             'status' => $this->status,
             'total_amount' => (float)$this->total_amount,
             'discount_amount' => (float)$this->discount_amount,
