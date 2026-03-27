@@ -33,6 +33,7 @@
     {"name": "Tables", "description": "Table management"},
     {"name": "Vouchers", "description": "Voucher management"},
     {"name": "Orders", "description": "Order management"},
+    {"name": "Reservations", "description": "Reservation management (Đặt bàn)"},
     {"name": "Dashboard", "description": "Dashboard statistics (Admin/Staff)"}
   ],
   "paths": {
@@ -1065,17 +1066,16 @@
       "get": {
         "tags": ["Reservations"],
         "summary": "Danh sách đặt bàn (Admin/Staff)",
-        "description": "Admin/Staff xem tất cả đặt bàn",
+        "description": "Admin/Staff xem tất cả đặt bàn. Hỗ trợ lọc theo status, customer_id, date, from_date, to_date.",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "page", "in": "query", "schema": {"type": "integer"}},
           {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
-          {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["PENDING", "CONFIRMED", "ARRIVED", "COMPLETED", "CANCELLED", "NO_SHOW"]}},
+          {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["PENDING", "CONFIRMED", "CANCELLED", "NO_SHOW"]}},
           {"name": "customer_id", "in": "query", "schema": {"type": "integer"}},
-          {"name": "table_id", "in": "query", "schema": {"type": "integer"}},
-          {"name": "date", "in": "query", "schema": {"type": "string", "format": "date"}},
-          {"name": "from_date", "in": "query", "schema": {"type": "string", "format": "date"}},
-          {"name": "to_date", "in": "query", "schema": {"type": "string", "format": "date"}}
+          {"name": "date", "in": "query", "schema": {"type": "string", "format": "date"}, "description": "Lọc theo ngày cụ thể"},
+          {"name": "from_date", "in": "query", "schema": {"type": "string", "format": "date"}, "description": "Lọc từ ngày"},
+          {"name": "to_date", "in": "query", "schema": {"type": "string", "format": "date"}, "description": "Lọc đến ngày"}
         ],
         "responses": {
           "200": {"description": "Success"}
@@ -1084,7 +1084,7 @@
       "post": {
         "tags": ["Reservations"],
         "summary": "Đặt bàn mới (Customer)",
-        "description": "Khách hàng đặt bàn trước",
+        "description": "Khách hàng đặt bàn. Chỉ cần chọn thời gian, số người và ghi chú. Không chọn bàn - Staff sẽ assign bàn khi khách đến. Phải đặt trước ít nhất 30 phút và trong vòng 30 ngày.",
         "security": [{"bearerAuth": []}],
         "requestBody": {
           "required": true,
@@ -1094,11 +1094,10 @@
                 "type": "object",
                 "required": ["reservation_time", "guest_count"],
                 "properties": {
-                  "reservation_time": {"type": "string", "format": "date-time", "example": "2026-03-27 19:00:00"},
-                  "guest_count": {"type": "integer", "example": 4},
-                  "table_id": {"type": "integer", "description": "Optional - Chọn bàn cụ thể", "example": 1},
-                  "customer_name": {"type": "string", "description": "Optional - Tự động lấy từ profile", "example": "Nguyễn Văn A"},
-                  "customer_phone": {"type": "string", "description": "Optional - Tự động lấy từ profile", "example": "0901234567"},
+                  "reservation_time": {"type": "string", "format": "date-time", "example": "2026-03-28 19:00:00", "description": "Phải đặt trước ít nhất 30 phút, trong vòng 30 ngày"},
+                  "guest_count": {"type": "integer", "example": 4, "description": "Số người, phải lớn hơn 0"},
+                  "customer_name": {"type": "string", "description": "Optional - Tự động lấy từ profile nếu không truyền", "example": "Nguyễn Văn A"},
+                  "customer_phone": {"type": "string", "description": "Optional - Tự động lấy từ profile nếu không truyền", "example": "0901234567"},
                   "customer_note": {"type": "string", "example": "Gần cửa sổ"}
                 }
               }
@@ -1106,7 +1105,8 @@
           }
         },
         "responses": {
-          "201": {"description": "Đặt bàn thành công"}
+          "201": {"description": "Đặt bàn thành công"},
+          "422": {"description": "Dữ liệu không hợp lệ"}
         }
       }
     },
@@ -1119,7 +1119,7 @@
         "parameters": [
           {"name": "page", "in": "query", "schema": {"type": "integer"}},
           {"name": "per_page", "in": "query", "schema": {"type": "integer"}},
-          {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["PENDING", "CONFIRMED", "ARRIVED", "COMPLETED", "CANCELLED", "NO_SHOW"]}}
+          {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["PENDING", "CONFIRMED", "CANCELLED", "NO_SHOW"]}}
         ],
         "responses": {
           "200": {"description": "Success"}
@@ -1137,32 +1137,6 @@
         }
       }
     },
-    "/reservations/check-availability": {
-      "post": {
-        "tags": ["Reservations"],
-        "summary": "Check bàn có trống không",
-        "description": "Public - Kiểm tra bàn còn trống trong khung giờ",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["reservation_time", "guest_count"],
-                "properties": {
-                  "reservation_time": {"type": "string", "format": "date-time", "example": "2026-03-27 19:00:00"},
-                  "guest_count": {"type": "integer", "example": 4},
-                  "table_id": {"type": "integer", "description": "Optional - Check bàn cụ thể", "example": 1}
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {"description": "Thông tin bàn trống"}
-        }
-      }
-    },
     "/reservations/{id}": {
       "get": {
         "tags": ["Reservations"],
@@ -1173,47 +1147,23 @@
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
         ],
         "responses": {
-          "200": {"description": "Success"}
+          "200": {"description": "Success"},
+          "403": {"description": "Customer không có quyền xem đặt bàn này"},
+          "404": {"description": "Không tìm thấy đặt bàn"}
         }
       }
     },
     "/reservations/{id}/confirm": {
       "post": {
         "tags": ["Reservations"],
-        "summary": "Xác nhận đặt bàn (Staff/Admin)",
-        "description": "Staff xác nhận đặt bàn, có thể assign bàn cụ thể",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "table_id": {"type": "integer", "description": "Optional - Assign bàn cụ thể", "example": 1}
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {"description": "Xác nhận thành công"}
-        }
-      }
-    },
-    "/reservations/{id}/arrive": {
-      "post": {
-        "tags": ["Reservations"],
-        "summary": "Khách đến - Check in (Staff/Admin)",
-        "description": "Staff check-in khách đến, tự động tạo order",
+        "summary": "Duyệt đặt bàn (Staff/Admin)",
+        "description": "Staff duyệt đặt bàn: PENDING → CONFIRMED. Chỉ đổi status, chưa assign bàn.",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
         ],
         "responses": {
-          "200": {"description": "Check-in thành công"}
+          "200": {"description": "Duyệt đặt bàn thành công"}
         }
       }
     },
@@ -1221,7 +1171,7 @@
       "put": {
         "tags": ["Reservations"],
         "summary": "Hủy đặt bàn",
-        "description": "Customer hủy đặt bàn của mình, Staff/Admin hủy bất kỳ",
+        "description": "Hủy đặt bàn (chỉ khi PENDING hoặc CONFIRMED). Customer chỉ hủy của mình, Staff/Admin hủy bất kỳ.",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
@@ -1239,7 +1189,8 @@
           }
         },
         "responses": {
-          "200": {"description": "Hủy thành công"}
+          "200": {"description": "Hủy thành công"},
+          "403": {"description": "Customer không có quyền hủy đặt bàn này"}
         }
       }
     },
@@ -1247,41 +1198,13 @@
       "put": {
         "tags": ["Reservations"],
         "summary": "Đánh dấu no-show (Staff/Admin)",
-        "description": "Staff đánh dấu khách không đến",
+        "description": "Staff đánh dấu khách không đến: CONFIRMED → NO_SHOW. Chỉ áp dụng cho đặt bàn CONFIRMED.",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
         ],
         "responses": {
           "200": {"description": "Đánh dấu thành công"}
-        }
-      }
-    },
-    "/reservations/{id}/assign-table": {
-      "put": {
-        "tags": ["Reservations"],
-        "summary": "Assign bàn cho đặt bàn (Staff/Admin)",
-        "description": "Staff assign hoặc đổi bàn cho đặt bàn",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}}
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["table_id"],
-                "properties": {
-                  "table_id": {"type": "integer", "example": 1}
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {"description": "Assign bàn thành công"}
         }
       }
     },
@@ -1795,7 +1718,7 @@
       "post": {
         "tags": ["Orders"],
         "summary": "Áp dụng điểm tích lũy",
-        "description": "Áp dụng điểm tích lũy vào đơn hàng. Mỗi điểm = giảm 1,000 VND. Đơn hàng phải ACTIVE và có customer_id. Điểm sẽ bị trừ ngay từ tài khoản khách hàng.",
+        "description": "Áp dụng điểm tích lũy vào đơn hàng. Mỗi điểm = giảm 1,000 VND. Đơn hàng phải ACTIVE. Nếu order chưa có customer, truyền customer_id để gán và áp dụng điểm. Điểm sẽ bị trừ ngay từ tài khoản khách hàng.",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}, "description": "Order ID"}
@@ -1808,7 +1731,8 @@
                 "type": "object",
                 "required": ["points"],
                 "properties": {
-                  "points": {"type": "integer", "description": "Số điểm muốn sử dụng (1 điểm = 1,000 VND)", "example": 5}
+                  "points": {"type": "integer", "description": "Số điểm muốn sử dụng (1 điểm = 1,000 VND)", "example": 5},
+                  "customer_id": {"type": "integer", "description": "ID khách hàng (bắt buộc nếu order chưa gán customer)", "example": 1}
                 }
               }
             }
@@ -1849,11 +1773,23 @@
       "delete": {
         "tags": ["Orders"],
         "summary": "Hủy sử dụng điểm",
-        "description": "Hủy sử dụng điểm đã áp dụng cho đơn hàng. Điểm sẽ được hoàn lại vào tài khoản khách hàng. Chỉ hủy được khi đơn ACTIVE.",
+        "description": "Hủy sử dụng điểm đã áp dụng cho đơn hàng. Điểm sẽ được hoàn lại vào tài khoản khách hàng. Chỉ hủy được khi đơn ACTIVE. Nếu order chưa có customer, truyền customer_id để xác định khách hàng hoàn điểm.",
         "security": [{"bearerAuth": []}],
         "parameters": [
           {"name": "id", "in": "path", "required": true, "schema": {"type": "integer"}, "description": "Order ID"}
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_id": {"type": "integer", "description": "ID khách hàng (bắt buộc nếu order chưa gán customer)", "example": 1}
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Hủy sử dụng điểm thành công",

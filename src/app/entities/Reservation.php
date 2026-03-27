@@ -4,6 +4,7 @@
  * Reservation Entity
  * 
  * Đại diện cho đặt bàn
+ * Flow: PENDING → CONFIRMED → CANCELLED / NO_SHOW
  */
 
 class Reservation {
@@ -26,13 +27,10 @@ class Reservation {
     // Relations
     public $customer = null;
     public $table = null;
-    public $order = null;
     
     // Reservation statuses
     const STATUS_PENDING = 'PENDING';
     const STATUS_CONFIRMED = 'CONFIRMED';
-    const STATUS_ARRIVED = 'ARRIVED';
-    const STATUS_COMPLETED = 'COMPLETED';
     const STATUS_CANCELLED = 'CANCELLED';
     const STATUS_NO_SHOW = 'NO_SHOW';
     
@@ -78,7 +76,6 @@ class Reservation {
             'updated_at' => $this->updated_at
         ];
         
-        // Include relations if loaded
         if ($this->customer) {
             $data['customer'] = is_object($this->customer) && method_exists($this->customer, 'toArray')
                 ? $this->customer->toArray()
@@ -91,33 +88,21 @@ class Reservation {
                 : $this->table;
         }
         
-        if ($this->order) {
-            $data['order'] = is_object($this->order) && method_exists($this->order, 'toArray')
-                ? $this->order->toArray()
-                : $this->order;
-        }
-        
         return $data;
     }
     
     /**
-     * Kiểm tra có thể hủy không
-     */
-    public function canCancel() {
-        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED]);
-    }
-    
-    /**
-     * Kiểm tra có thể xác nhận không
+     * Có thể duyệt không (chỉ PENDING)
      */
     public function canConfirm() {
         return $this->status === self::STATUS_PENDING;
     }
+
     
     /**
-     * Kiểm tra có thể arrive không
+     * Có thể hủy không (PENDING hoặc CONFIRMED)
      */
-    public function canArrive() {
-        return $this->status === self::STATUS_CONFIRMED;
+    public function canCancel() {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED]);
     }
 }

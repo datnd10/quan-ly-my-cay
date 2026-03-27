@@ -3,7 +3,7 @@
 /**
  * Reservation Repository
  * 
- * Data access layer cho reservations
+ * Data access layer cho reservations (đơn giản hóa)
  */
 
 class ReservationRepository {
@@ -22,31 +22,21 @@ class ReservationRepository {
         $where = [];
         $params = [];
         
-        // Filter by status
         if (!empty($filters['status'])) {
             $where[] = "r.status = :status";
             $params[':status'] = $filters['status'];
         }
         
-        // Filter by customer
         if (!empty($filters['customer_id'])) {
             $where[] = "r.customer_id = :customer_id";
             $params[':customer_id'] = $filters['customer_id'];
         }
         
-        // Filter by table
-        if (!empty($filters['table_id'])) {
-            $where[] = "r.table_id = :table_id";
-            $params[':table_id'] = $filters['table_id'];
-        }
-        
-        // Filter by date
         if (!empty($filters['date'])) {
             $where[] = "DATE(r.reservation_time) = :date";
             $params[':date'] = $filters['date'];
         }
         
-        // Filter by date range
         if (!empty($filters['from_date'])) {
             $where[] = "DATE(r.reservation_time) >= :from_date";
             $params[':from_date'] = $filters['from_date'];
@@ -64,7 +54,7 @@ class ReservationRepository {
         $result = $this->db->fetchOne($countSql, $params);
         $total = $result && isset($result['total']) ? (int)$result['total'] : 0;
         
-        // Get reservations
+        // Get reservations with customer info
         $sql = "SELECT r.*, 
                        c.name as customer_name_rel, c.phone as customer_phone_rel,
                        t.table_number, t.capacity as table_capacity
@@ -82,27 +72,7 @@ class ReservationRepository {
         
         $reservations = [];
         foreach ($rows as $row) {
-            $reservation = new Reservation($row);
-            
-            // Attach customer info
-            if ($row['customer_name_rel']) {
-                $reservation->customer = [
-                    'id' => (int)$row['customer_id'],
-                    'name' => $row['customer_name_rel'],
-                    'phone' => $row['customer_phone_rel']
-                ];
-            }
-            
-            // Attach table info
-            if ($row['table_number']) {
-                $reservation->table = [
-                    'id' => (int)$row['table_id'],
-                    'table_number' => $row['table_number'],
-                    'capacity' => (int)$row['table_capacity']
-                ];
-            }
-            
-            $reservations[] = $reservation;
+            $reservations[] = $this->buildReservation($row);
         }
         
         return [
@@ -129,28 +99,7 @@ class ReservationRepository {
             return null;
         }
         
-        $reservation = new Reservation($row);
-        
-        // Attach customer info
-        if ($row['customer_name_rel']) {
-            $reservation->customer = [
-                'id' => (int)$row['customer_id'],
-                'name' => $row['customer_name_rel'],
-                'phone' => $row['customer_phone_rel']
-            ];
-        }
-        
-        // Attach table info
-        if ($row['table_number']) {
-            $reservation->table = [
-                'id' => (int)$row['table_id'],
-                'table_number' => $row['table_number'],
-                'capacity' => (int)$row['table_capacity'],
-                'status' => $row['table_status']
-            ];
-        }
-        
-        return $reservation;
+        return $this->buildReservation($row);
     }
     
     /**
@@ -158,12 +107,11 @@ class ReservationRepository {
      */
     public function create($data) {
         $sql = "INSERT INTO {$this->table} 
-                (customer_id, table_id, reservation_time, guest_count, customer_name, customer_phone, customer_note, status)
-                VALUES (:customer_id, :table_id, :reservation_time, :guest_count, :customer_name, :customer_phone, :customer_note, :status)";
+                (customer_id, reservation_time, guest_count, customer_name, customer_phone, customer_note, status)
+                VALUES (:customer_id, :reservation_time, :guest_count, :customer_name, :customer_phone, :customer_note, :status)";
         
         $params = [
             ':customer_id' => $data['customer_id'],
-            ':table_id' => $data['table_id'] ?? null,
             ':reservation_time' => $data['reservation_time'],
             ':guest_count' => $data['guest_count'],
             ':customer_name' => $data['customer_name'],
@@ -185,8 +133,7 @@ class ReservationRepository {
         $fields = [];
         $params = [':id' => $id];
         
-        $allowedFields = ['table_id', 'reservation_time', 'guest_count', 'customer_name', 
-                          'customer_phone', 'customer_note', 'status', 'order_id', 
+        $allowedFields = ['table_id', 'status', 'order_id', 
                           'confirmed_by', 'confirmed_at', 'cancelled_reason'];
         
         foreach ($allowedFields as $field) {
@@ -207,34 +154,7 @@ class ReservationRepository {
     }
     
     /**
-     * Kiểm tra bàn có trống tại thời điểm không
-     */
-    public function isTableAvailable($tableId, $reservationTime, $excludeReservationId = null) {
-        // Kiểm tra có reservation nào CONFIRMED trong khoảng thời gian ±2 giờ không
-        $sql = "SELECT COUNT(*) as count 
-                FROM {$this->table}
-                WHERE table_id = :table_id
-                AND status IN ('CONFIRMED', 'ARRIVED')
-                AND reservation_time BETWEEN 
-                    DATE_SUB(:reservation_time, INTERVAL 2 HOUR) 
-                    AND DATE_ADD(:reservation_time, INTERVAL 2 HOUR)";
-        
-        $params = [
-            ':table_id' => $tableId,
-            ':reservation_time' => $reservationTime
-        ];
-        
-        if ($excludeReservationId) {
-            $sql .= " AND id != :exclude_id";
-            $params[':exclude_id'] = $excludeReservationId;
-        }
-        
-        $result = $this->db->fetchOne($sql, $params);
-        return $result && $result['count'] == 0;
-    }
-    
-    /**
-     * Lấy reservations hôm nay
+     * Lấy reservations hôm nay (PENDING + CONFIRMED)
      */
     public function getToday() {
         $sql = "SELECT r.*, 
@@ -244,42 +164,41 @@ class ReservationRepository {
                 LEFT JOIN customers c ON r.customer_id = c.id
                 LEFT JOIN tables t ON r.table_id = t.id
                 WHERE DATE(r.reservation_time) = CURDATE()
-                AND r.status IN ('PENDING', 'CONFIRMED', 'ARRIVED')
+                AND r.status IN ('PENDING', 'CONFIRMED')
                 ORDER BY r.reservation_time ASC";
         
         $rows = $this->db->fetchAll($sql);
         
         $reservations = [];
         foreach ($rows as $row) {
-            $reservation = new Reservation($row);
-            
-            if ($row['customer_name_rel']) {
-                $reservation->customer = [
-                    'id' => (int)$row['customer_id'],
-                    'name' => $row['customer_name_rel'],
-                    'phone' => $row['customer_phone_rel']
-                ];
-            }
-            
-            if ($row['table_number']) {
-                $reservation->table = [
-                    'id' => (int)$row['table_id'],
-                    'table_number' => $row['table_number'],
-                    'capacity' => (int)$row['table_capacity']
-                ];
-            }
-            
-            $reservations[] = $reservation;
+            $reservations[] = $this->buildReservation($row);
         }
         
         return $reservations;
     }
     
     /**
-     * Xóa reservation
+     * Build Reservation object từ row
      */
-    public function delete($id) {
-        $sql = "DELETE FROM {$this->table} WHERE id = :id";
-        return $this->db->query($sql, [':id' => $id]);
+    private function buildReservation($row) {
+        $reservation = new Reservation($row);
+        
+        if (!empty($row['customer_name_rel'])) {
+            $reservation->customer = [
+                'id' => (int)$row['customer_id'],
+                'name' => $row['customer_name_rel'],
+                'phone' => $row['customer_phone_rel']
+            ];
+        }
+        
+        if (!empty($row['table_number'])) {
+            $reservation->table = [
+                'id' => (int)$row['table_id'],
+                'table_number' => $row['table_number'],
+                'capacity' => (int)$row['table_capacity']
+            ];
+        }
+        
+        return $reservation;
     }
 }

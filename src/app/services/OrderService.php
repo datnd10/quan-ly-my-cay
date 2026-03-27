@@ -368,7 +368,7 @@ class OrderService {
      * Áp dụng điểm tích lũy vào đơn hàng
      * Mỗi điểm = giảm 1,000 VND
      */
-    public function applyPoint($orderId, $points, $userId) {
+    public function applyPoint($orderId, $points, $customerId = null, $userId = null) {
         $order = $this->orderRepo->findById($orderId);
         if (!$order) {
             throw new Exception('Không tìm thấy đơn hàng');
@@ -382,8 +382,14 @@ class OrderService {
             throw new Exception('Đơn hàng đã sử dụng điểm. Vui lòng hủy điểm hiện tại trước.');
         }
         
+        // Nếu order chưa có customer, dùng customer_id từ request
+        if (!$order->customer_id && $customerId) {
+            $this->orderRepo->update($orderId, ['customer_id' => $customerId]);
+            $order->customer_id = $customerId;
+        }
+        
         if (!$order->customer_id) {
-            throw new Exception('Đơn hàng chưa có khách hàng. Vui lòng gán khách hàng trước.');
+            throw new Exception('Vui lòng truyền customer_id để áp dụng điểm');
         }
         
         $points = (int)$points;
@@ -457,7 +463,7 @@ class OrderService {
     /**
      * Hủy sử dụng điểm cho đơn hàng
      */
-    public function removePoint($orderId, $userId) {
+    public function removePoint($orderId, $customerId = null, $userId = null) {
         $order = $this->orderRepo->findById($orderId);
         if (!$order) {
             throw new Exception('Không tìm thấy đơn hàng');
@@ -469,6 +475,15 @@ class OrderService {
         
         if ($order->points_used <= 0) {
             throw new Exception('Đơn hàng chưa sử dụng điểm');
+        }
+        
+        // Nếu order chưa có customer, dùng customer_id từ request
+        if (!$order->customer_id && $customerId) {
+            $order->customer_id = $customerId;
+        }
+        
+        if (!$order->customer_id) {
+            throw new Exception('Vui lòng truyền customer_id để hoàn điểm');
         }
         
         $this->db->beginTransaction();

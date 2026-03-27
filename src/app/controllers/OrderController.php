@@ -204,12 +204,13 @@ class OrderController extends Controller {
             
             $data = $this->getBody();
             $points = $data['points'] ?? 0;
+            $customerId = $data['customer_id'] ?? null;
             
             if (empty($points) || $points <= 0) {
                 return $this->error('Số điểm phải lớn hơn 0', 400);
             }
             
-            $order = $this->orderService->applyPoint($id, $points, $user['user_id']);
+            $order = $this->orderService->applyPoint($id, $points, $customerId, $user['user_id']);
             
             $this->success($order, 'Áp dụng điểm thành công');
             
@@ -226,7 +227,10 @@ class OrderController extends Controller {
         try {
             $user = $this->requireRole(['ADMIN', 'STAFF']);
             
-            $order = $this->orderService->removePoint($id, $user['user_id']);
+            $data = $this->getBody();
+            $customerId = $data['customer_id'] ?? null;
+            
+            $order = $this->orderService->removePoint($id, $customerId, $user['user_id']);
             
             $this->success($order, 'Hủy sử dụng điểm thành công');
             
