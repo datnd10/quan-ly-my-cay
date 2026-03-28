@@ -142,6 +142,11 @@ $router->delete('products/{id}', 'ProductController@destroy'); // Soft delete
 // CUSTOMER ROUTES
 // ============================================
 $router->get('customers/search', 'CustomerController@search'); // Search by phone (phải đặt trước {id})
+
+// Customer self-service routes (phải đặt trước {id})
+$router->put('customers/profile', 'CustomerController@updateProfile');
+$router->get('customers/my-points/history', 'CustomerController@myPointHistory');
+
 $router->get('customers', 'CustomerController@index');
 $router->get('customers/{id}', 'CustomerController@show');
 $router->post('customers', 'CustomerController@store');
@@ -150,10 +155,6 @@ $router->put('customers/{id}/status', 'CustomerController@updateStatus');
 $router->put('customers/{id}/points', 'CustomerController@updatePoints');
 $router->get('customers/{id}/points/history', 'CustomerController@pointHistory');
 $router->delete('customers/{id}', 'CustomerController@destroy');
-
-// Customer self-service routes
-$router->put('customers/profile', 'CustomerController@updateProfile');
-$router->get('customers/my-points/history', 'CustomerController@myPointHistory');
 
 // ============================================
 // TABLE ROUTES
