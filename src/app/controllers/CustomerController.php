@@ -258,9 +258,6 @@ class CustomerController extends Controller
         $user = $this->auth();
 
         // Chỉ customer mới được dùng API này
-        if ($user['role'] !== CUSTOMER) {
-            return $this->error('API này chỉ dành cho khách hàng', 403);
-        }
 
         $data = $this->getBody();
 
