@@ -129,28 +129,50 @@ class CustomerService {
         // Validate
         $this->validateCustomer($data, false, $id);
         
+        $phoneChanged = isset($data['phone']) && $data['phone'] !== $customer['phone'];
+        
         // Kiểm tra phone nếu có thay đổi
-        if (isset($data['phone']) && $data['phone'] !== $customer['phone']) {
+        if ($phoneChanged) {
             if ($this->customerRepo->phoneExists($data['phone'], $id)) {
                 throw new Exception('Số điện thoại đã được sử dụng');
             }
-        }
-        
-        // Chỉ update các field của customer
-        $updateData = [];
-        $allowedFields = ['name', 'phone', 'email'];
-        
-        foreach ($allowedFields as $field) {
-            if (isset($data[$field])) {
-                $updateData[$field] = $data[$field];
+            if ($this->userRepo->usernameExists($data['phone'], $customer['user_id'])) {
+                throw new Exception('Số điện thoại đã được liên kết với tài khoản khác');
             }
         }
         
-        if (!empty($updateData)) {
-            $this->customerRepo->update($id, $updateData);
-        }
+        $db = Database::getInstance();
         
-        return $this->getCustomerById($id);
+        try {
+            $db->beginTransaction();
+            
+            // Chỉ update các field của customer
+            $updateData = [];
+            $allowedFields = ['name', 'phone', 'email'];
+            
+            foreach ($allowedFields as $field) {
+                if (isset($data[$field])) {
+                    $updateData[$field] = $data[$field];
+                }
+            }
+            
+            if (!empty($updateData)) {
+                $this->customerRepo->update($id, $updateData);
+            }
+            
+            // Cập nhật username trong bảng users thành SĐT mới
+            if ($phoneChanged) {
+                $this->userRepo->update($customer['user_id'], ['username' => $data['phone']]);
+            }
+            
+            $db->commit();
+            
+            return $this->getCustomerById($id);
+            
+        } catch (Exception $e) {
+            $db->rollback();
+            throw $e;
+        }
     }
     
     /**
