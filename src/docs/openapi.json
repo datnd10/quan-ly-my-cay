@@ -530,6 +530,7 @@
                 "type": "object",
                 "properties": {
                   "name": {"type": "string"},
+                  "phone": {"type": "string"},
                   "email": {"type": "string"}
                 }
               }

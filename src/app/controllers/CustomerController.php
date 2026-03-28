@@ -239,7 +239,7 @@ class CustomerController extends Controller {
      /**
      * Khách hàng tự cập nhật thông tin cá nhân
      * PUT /api/customers/profile
-     * Body: { "name": "Nguyen Van A", "email": "a@gmail.com" }
+     * Body: { "name": "Nguyen Van A", "phone": "0987654321", "email": "a@gmail.com" }
      */
     public function updateProfile() {
         // Lấy thông tin user từ token
