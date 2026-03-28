@@ -247,6 +247,7 @@ class OrderRepository {
         $params = [':id' => $id];
         
         $allowedFields = ['customer_id', 'table_id', 'voucher_id', 'voucher_discount', 
+                          'points_used', 'points_discount',
                           'status', 'total_amount', 'discount_amount', 'final_amount',
                           'payment_method', 'payment_at', 'completed_at'];
         
